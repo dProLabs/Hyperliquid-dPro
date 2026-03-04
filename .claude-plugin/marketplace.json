@@ -1,0 +1,46 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "hyperliquid-dpro",
+  "description": "Hyperliquid skill for AI coding assistants — market reads, account management, order execution, and onchain analytics across spot, perps, and HIP-3 assets",
+  "owner": {
+    "name": "dProLabs"
+  },
+  "metadata": {
+    "description": "Hyperliquid skill with market/account/trade/onchain workflows for spot, perps, and HIP-3"
+  },
+  "plugins": [
+    {
+      "name": "hyperliquid-dpro",
+      "source": "./",
+      "description": "Single-skill package for Hyperliquid trading and reads: quote, book, candles, balances, positions, order placement/cancellation, leverage, and onchain commands",
+      "version": "0.1.0",
+      "author": {
+        "name": "dProLabs"
+      },
+      "homepage": "https://github.com/dProLabs/Hyperliquid-dPro",
+      "license": "MIT",
+      "keywords": [
+        "skills",
+        "hyperliquid",
+        "dex",
+        "trading",
+        "derivatives",
+        "perps",
+        "spot",
+        "hip-3",
+        "onchain"
+      ],
+      "category": "web3",
+      "tags": [
+        "skills",
+        "hyperliquid",
+        "trading",
+        "perps",
+        "spot",
+        "hip-3",
+        "onchain"
+      ],
+      "strict": false
+    }
+  ]
+}

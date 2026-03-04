@@ -1,0 +1,23 @@
+{
+  "name": "hyperliquid-dpro",
+  "description": "Hyperliquid skill for market, account, trade, and onchain workflows",
+  "version": "0.1.0",
+  "author": {
+    "name": "dProLabs"
+  },
+  "homepage": "https://github.com/dProLabs/Hyperliquid-dPro",
+  "repository": "https://github.com/dProLabs/Hyperliquid-dPro",
+  "license": "MIT",
+  "keywords": [
+    "hyperliquid",
+    "dex",
+    "trading",
+    "perps",
+    "spot",
+    "hip-3",
+    "onchain"
+  ],
+  "skills": [
+    "./"
+  ]
+}

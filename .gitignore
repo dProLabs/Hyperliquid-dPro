@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Local tool settings
+.clawhub/*
+!.clawhub/INSTALL.md
+.claude/settings.local.json
+.claude
+CLAUDE.md
+
+# Local helper scripts
+git-safe.sh
+docs
+
+# External reference repos (research only, not part of this skill deliverable)
+
+# Planning / walkthrough docs (not required for runtime skill delivery)
+skills-plan.md
+docs/agent-walkthrough.md
+docs/implementation-plan.md
+docs/skill-walkthrough.md
+docs/openapi.json
+
+# OS / temp files
+.DS_Store
+*.log

@@ -1,0 +1,19 @@
+{
+  "name": "hyperliquid-dpro",
+  "version": "0.1.0",
+  "skills": [
+    "./"
+  ],
+  "keywords": [
+    "skills",
+    "hyperliquid",
+    "dex",
+    "trading",
+    "derivatives",
+    "perps",
+    "spot",
+    "hip-3",
+    "onchain",
+    "orderbook"
+  ]
+}

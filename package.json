@@ -1,0 +1,14 @@
+{
+  "name": "hyperliquid-dpro",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Hyperliquid trading skill for agent environments",
+  "dependencies": {
+    "@msgpack/msgpack": "^3.0.0-beta2",
+    "@nktkas/hyperliquid": "^0.30.3",
+    "@noble/curves": "^1.8.1",
+    "@noble/hashes": "^1.7.1",
+    "viem": "^2.38.6"
+  }
+}
