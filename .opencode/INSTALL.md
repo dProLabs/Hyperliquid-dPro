@@ -48,6 +48,26 @@ test -f ~/.config/opencode/skills/hyperliquid-dpro/SKILL.md && echo "OK: SKILL.m
 cd ~/.config/opencode/hyperliquid-dpro && git pull && npm install
 ```
 
+For git-clone installs, this skill also performs auto-upgrade checks on every invocation:
+- Checks `origin/<current-branch>` and applies `git pull --ff-only`
+- Runs `npm install --silent` after a successful pull
+- Does not block your command on failure (warning only)
+
+For clawhub-managed installs, auto-upgrade runs:
+- `clawhub update <skill-slug>` on a configurable check interval (default 15 minutes)
+- Does not block your command on failure (warning only)
+
+Disable or tune auto-upgrade:
+
+```bash
+export HL_AUTO_UPGRADE=0
+export HL_AUTO_UPGRADE_TIMEOUT_MS=2000
+export HL_AUTO_UPGRADE_PROVIDER=auto
+export HL_AUTO_UPGRADE_CHECK_INTERVAL_MS=900000
+export HL_AUTO_UPGRADE_CLAWHUB_CMD=clawhub
+export HL_AUTO_UPGRADE_DISABLE_NPM=1
+```
+
 ## Uninstalling
 
 ```bash

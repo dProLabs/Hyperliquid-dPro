@@ -6,27 +6,27 @@ No global CLI install required. Supports 200+ perpetual contracts, spot tokens, 
 
 ## Installation
 
-### Via OpenClaw (Recommended)
+### Via Clawhub (Recommended)
 
-[OpenClaw](https://openclaw.ai) is a skill registry and package manager for AI agent environments.
+[Clawhub](https://openclaw.ai) is a skill registry and package manager for AI agent environments.
 
 ```bash
 # Install the Hyperliquid skill from GitHub
-openclaw install github:dProLabs/Hyperliquid-dPro
+clawhub install github:dProLabs/Hyperliquid-dPro
 ```
 
-That's it. The skill is now available in your agent environment. OpenClaw handles dependency resolution, version management, and skill registration automatically.
+That's it. The skill is now available in your agent environment. Clawhub handles dependency resolution, version management, and skill registration automatically.
 
-To update to the latest version:
+Optional manual update (auto-upgrade is already enabled by default for git-clone installs):
 
 ```bash
-openclaw update github:dProLabs/Hyperliquid-dPro
+clawhub update github:dProLabs/Hyperliquid-dPro
 ```
 
 To uninstall:
 
 ```bash
-openclaw uninstall hyperliquid-dpro
+clawhub uninstall hyperliquid-dpro
 ```
 
 ### For Claude Code
@@ -127,6 +127,27 @@ const result = await runHyperliquidSkill(
 Runtime context:
 - `password`: required for API account decryption and all write actions
 - `network`: `mainnet` (default) or `testnet`
+- `autoUpgrade`: `boolean` (default `true`) enable or disable in-skill auto-upgrade checks
+- `autoUpgradeTimeoutMs`: `number` (default `2000`) timeout budget for each auto-upgrade pass
+- `autoUpgradeProvider`: `'auto' | 'git' | 'clawhub' | 'off'` (default `auto`) select upgrade provider
+- `autoUpgradeCheckIntervalMs`: `number` (default `900000`) clawhub update check interval
+- `autoUpgradeClawhubCmd`: `string` (default `clawhub`) clawhub command alias
+- `autoUpgradeDryRun`: `boolean` (default `false`) check-only mode for debugging
+- `autoUpgradeDisableNpmInstall`: `boolean` (default `false`) skip `npm install` after successful pull
+
+Auto-upgrade env switches:
+- `HL_AUTO_UPGRADE=0` disable auto-upgrade globally
+- `HL_AUTO_UPGRADE_TIMEOUT_MS=2000` override timeout budget
+- `HL_AUTO_UPGRADE_PROVIDER=auto|git|clawhub|off` force provider routing
+- `HL_AUTO_UPGRADE_CHECK_INTERVAL_MS=900000` set clawhub update check interval
+- `HL_AUTO_UPGRADE_CLAWHUB_CMD=clawhub` set clawhub command alias
+- `HL_AUTO_UPGRADE_DISABLE_NPM=1` skip dependency install step
+
+Auto-upgrade behavior:
+- Runs on each `runHyperliquidSkill(...)` invocation
+- `git` installs use `git pull --ff-only` + `npm install --silent` when remote is ahead
+- `clawhub` installs run `clawhub update <skill-slug>` on the configured check interval
+- Never blocks the requested command; failures/timeouts surface as one warning line
 
 ### Command Line
 
@@ -437,6 +458,7 @@ hl onchain leaderboard --json
 |------|-------------|
 | `~/.config/hyperliquid-dpro/config.json` | Account list, default account, network setting |
 | `~/.config/hyperliquid-dpro/keys.enc` | AES-encrypted agent private keys |
+| `~/.config/hyperliquid-dpro/upgrade-state.json` | Auto-upgrade check/update state and warning dedupe metadata |
 
 Private keys are **never stored in plain text**. A master password is required to encrypt/decrypt keys.
 
@@ -448,6 +470,13 @@ When calling programmatically, pass options via `runtimeContext`:
 |-----|------|-------------|
 | `password` | string | Master password to decrypt stored private keys |
 | `network` | `'mainnet'` \| `'testnet'` | Target network (default: mainnet) |
+| `autoUpgrade` | boolean | Enable/disable auto-upgrade for this invocation (default: `true`) |
+| `autoUpgradeTimeoutMs` | number | Timeout budget in milliseconds for one upgrade pass (default: `2000`) |
+| `autoUpgradeProvider` | `'auto' \| 'git' \| 'clawhub' \| 'off'` | Select provider routing for this invocation |
+| `autoUpgradeCheckIntervalMs` | number | Clawhub provider check interval in milliseconds (default: `900000`) |
+| `autoUpgradeClawhubCmd` | string | Clawhub command alias (default: `clawhub`) |
+| `autoUpgradeDryRun` | boolean | Check-only mode for debugging (default: `false`) |
+| `autoUpgradeDisableNpmInstall` | boolean | Skip `npm install` after a successful pull (default: `false`) |
 
 ---
 
@@ -456,6 +485,7 @@ When calling programmatically, pass options via `runtimeContext`:
 ```
 scripts/
 ├── entry.mjs               # Single entry point: runHyperliquidSkill()
+├── auto-upgrade.mjs        # Per-invocation auto-upgrade checks
 ├── parser.mjs              # Input parsing (command + natural language)
 ├── router.mjs              # AST -> command handler dispatch
 ├── format.mjs              # Structured result -> text output

@@ -1,19 +1,35 @@
-# Installing via OpenClaw
+# Installing via Clawhub
 
-Use OpenClaw to install this skill package from the new repository:
+Use Clawhub to install this skill package from the repository:
 
 ```bash
-openclaw install github:dProLabs/Hyperliquid-dPro
+clawhub install github:dProLabs/Hyperliquid-dPro
 ```
 
 Update:
 
 ```bash
-openclaw update github:dProLabs/Hyperliquid-dPro
+clawhub update github:dProLabs/Hyperliquid-dPro
 ```
 
 Uninstall:
 
 ```bash
-openclaw uninstall hyperliquid-dpro
+clawhub uninstall hyperliquid-dpro
+```
+
+## Auto-upgrade
+
+For clawhub-managed installs, the skill can auto-run:
+
+```bash
+clawhub update <skill-slug>
+```
+
+Controls:
+
+```bash
+export HL_AUTO_UPGRADE_PROVIDER=auto
+export HL_AUTO_UPGRADE_CHECK_INTERVAL_MS=900000
+export HL_AUTO_UPGRADE_CLAWHUB_CMD=clawhub
 ```
