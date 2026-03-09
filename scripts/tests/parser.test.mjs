@@ -100,51 +100,57 @@ describe('parser', () => {
 
   describe('trade commands', () => {
     it('parses limit buy', () => {
-      const r = parseInput('dpro-hl order limit buy 0.01 BTC 50000');
+      const r = parseInput('dpro-hl perp order limit buy 0.01 BTC 50000');
       assert.equal(r.domain, 'trade');
       assert.equal(r.action, 'limit');
+      assert.equal(r.marketType, 'perp');
       assert.equal(r.target, 'BTC');
       assert.equal(r.args.side, 'buy');
       assert.equal(r.args.size, '0.01');
       assert.equal(r.args.price, '50000');
     });
 
-    it('parses market sell', () => {
-      const r = parseInput('dpro-hl order market sell 1.5 ETH');
+    it('parses spot market sell', () => {
+      const r = parseInput('dpro-hl spot order market sell 1.5 ETH');
       assert.equal(r.action, 'market');
+      assert.equal(r.marketType, 'spot');
       assert.equal(r.args.side, 'sell');
       assert.equal(r.args.size, '1.5');
       assert.equal(r.target, 'ETH');
     });
 
-    it('parses market order with namespaced coin', () => {
-      const r = parseInput('dpro-hl order market buy 1 xyz:AAPL');
+    it('parses hip3 market order with namespaced coin', () => {
+      const r = parseInput('dpro-hl hip3 order market buy 1 xyz:AAPL');
       assert.equal(r.action, 'market');
+      assert.equal(r.marketType, 'hip3');
       assert.equal(r.args.side, 'buy');
       assert.equal(r.target, 'XYZ:AAPL');
     });
 
     it('parses cancel', () => {
-      const r = parseInput('dpro-hl order cancel 12345');
+      const r = parseInput('dpro-hl perp order cancel 12345');
       assert.equal(r.action, 'cancel');
+      assert.equal(r.marketType, 'perp');
       assert.equal(r.target, '12345');
     });
 
     it('parses cancel-all', () => {
-      const r = parseInput('dpro-hl order cancel-all');
+      const r = parseInput('dpro-hl spot order cancel-all');
       assert.equal(r.action, 'cancel-all');
+      assert.equal(r.marketType, 'spot');
     });
 
     it('parses set-leverage', () => {
-      const r = parseInput('dpro-hl order set-leverage BTC 10 --cross');
+      const r = parseInput('dpro-hl perp order set-leverage BTC 10 --cross');
       assert.equal(r.action, 'set-leverage');
+      assert.equal(r.marketType, 'perp');
       assert.equal(r.target, 'BTC');
       assert.equal(r.args.leverage, '10');
       assert.equal(r.flags.cross, true);
     });
 
     it('parses limit with tif and reduce-only', () => {
-      const r = parseInput('dpro-hl order limit sell 0.5 ETH 3500 --tif Alo --reduce-only');
+      const r = parseInput('dpro-hl perp order limit sell 0.5 ETH 3500 --tif Alo --reduce-only');
       assert.equal(r.args.side, 'sell');
       assert.equal(r.flags.tif, 'Alo');
       assert.equal(r.flags['reduce-only'], true);
@@ -157,7 +163,11 @@ describe('parser', () => {
     });
 
     it('throws on missing side', () => {
-      assert.throws(() => parseInput('dpro-hl order limit 0.01 BTC 50000'), /side/i);
+      assert.throws(() => parseInput('dpro-hl perp order limit 0.01 BTC 50000'), /side/i);
+    });
+
+    it('rejects legacy order command', () => {
+      assert.throws(() => parseInput('dpro-hl order limit buy 0.01 BTC 50000'), /no longer supported/i);
     });
   });
 
@@ -217,21 +227,18 @@ describe('parser', () => {
       assert.equal(r.action, 'positions');
     });
 
-    it('parses buy NL', () => {
-      const r = parseInput('\u4e70\u5165 0.5 ETH');
-      assert.equal(r.domain, 'trade');
-      assert.equal(r.action, 'market');
-      assert.equal(r.args.side, 'buy');
-      assert.equal(r.args.size, '0.5');
-      assert.equal(r.target, 'ETH');
+    it('rejects buy NL without namespace', () => {
+      assert.throws(
+        () => parseInput('\u4e70\u5165 0.5 ETH'),
+        /must specify a market namespace/i,
+      );
     });
 
-    it('parses buy NL with namespaced coin', () => {
-      const r = parseInput('buy 1 xyz:AAPL');
-      assert.equal(r.domain, 'trade');
-      assert.equal(r.action, 'market');
-      assert.equal(r.args.side, 'buy');
-      assert.equal(r.target, 'XYZ:AAPL');
+    it('rejects buy NL with namespaced coin when namespace missing', () => {
+      assert.throws(
+        () => parseInput('buy 1 xyz:AAPL'),
+        /must specify a market namespace/i,
+      );
     });
 
     it('throws on unparseable input', () => {

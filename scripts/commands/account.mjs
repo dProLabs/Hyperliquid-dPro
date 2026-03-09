@@ -32,7 +32,7 @@ async function addApi(parsed, ctx) {
   const alias = parsed.args?.rest?.[1];
 
   if (!masterAddress || !agentPrivateKey) {
-    throw inputError('Usage: dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]');
+    throw inputError('Usage: dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]  --password <password>');
   }
 
   assertAddress(masterAddress, 'master address');

@@ -23,7 +23,7 @@ export async function routeCommand(parsed, ctx) {
       ok: true,
       type: 'help',
       data: {
-        message: 'Hyperliquid-dPro — use "dpro-hl quote BTC", "dpro-hl onchain health", "dpro-hl book ETH", "dpro-hl markets ls", "dpro-hl account ls", "dpro-hl order limit buy 0.01 BTC 50000", etc.',
+        message: 'Hyperliquid-dPro — use "dpro-hl quote BTC", "dpro-hl onchain health", "dpro-hl book ETH", "dpro-hl markets ls", "dpro-hl account ls", "dpro-hl spot order limit buy 0.01 BTC 50000", etc.',
       },
     };
   }
