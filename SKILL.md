@@ -1,5 +1,5 @@
 ---
-name: hyperliquid-dpro
+name: dpro-hl
 description: Use this skill for spot, perpetual, and HIP-3 asset trading and data queries on Hyperliquid; supports order placement/cancellation, leverage and margin management, real-time positions/PnL/orderbook/market monitoring, multi-account workflows, and onchain read-only data such as holder distribution, liquidation heatmaps, and leaderboards.
 ---
 
@@ -13,7 +13,7 @@ Use this skill for:
 - Hyperliquid market reads (`quote`, `book`, `candles`, `movers`, `overview`, `markets ls`)
 - Hyperliquid account reads (`positions`, `balances`, `orders`, `fills`, `portfolio`)
 - Hyperliquid trade writes across three equal modules: spot, perps, and HIP-3 (`order limit/market/cancel/...`, `set-leverage`, `topup-isolated`, `approve-builder`)
-- Onchain data read commands under `hl onchain ...`
+- Onchain data read commands under `dpro-hl onchain ...`
 
 Do not use this skill for:
 - General programming tutorials unrelated to this repository
@@ -24,16 +24,16 @@ Do not use this skill for:
 ```bash
 node --input-type=module -e "
   import { runHyperliquidSkill } from './scripts/entry.mjs';
-  console.log(await runHyperliquidSkill('hl quote BTC'));
+  console.log(await runHyperliquidSkill('dpro-hl quote BTC'));
 "
 ```
 
 ## Execution Model (Important)
 
-- Treat any `hl ...` string as **skill input text**, not a shell executable.
-- Never run `hl` directly in terminal commands.
+- Treat any `dpro-hl ...` string as **skill input text**, not a shell executable.
+- Never run `dpro-hl` directly in terminal commands.
 - For execution/checks inside the agent runtime, always call:
-  - `runHyperliquidSkill('<hl command>', runtimeContext)`
+  - `runHyperliquidSkill('<dpro-hl command>', runtimeContext)`
 - Command examples in this document describe input syntax, not PATH binaries.
 
 Runtime parameters:
@@ -51,69 +51,69 @@ To execute trades, you need a Hyperliquid API wallet:
 5. Add account in skill:
 
 ```bash
-hl account add-api <masterAddress> <agentPrivateKey> [alias]
+dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]
 ```
 
 Quick validation:
 
 ```bash
-hl account ls
-hl positions <alias>
+dpro-hl account ls
+dpro-hl positions <alias>
 ```
 
 ## Command Surface (Core)
 
 ### Market
 ```bash
-hl quote BTC
-hl book ETH --levels 10
-hl candles SOL --interval 1h --last 20
-hl markets ls
+dpro-hl quote BTC
+dpro-hl book ETH --levels 10
+dpro-hl candles SOL --interval 1h --last 20
+dpro-hl markets ls
 ```
 
 ### Account
 ```bash
-hl account ls
-hl account add-readonly <address> [alias]
-hl positions [alias|address]
+dpro-hl account ls
+dpro-hl account add-readonly <address> [alias]
+dpro-hl positions [alias|address]
 ```
 
 ### Trade
 ```bash
 # Spot example (coin from markets list)
-hl order limit buy 10 PURR 0.08
+dpro-hl order limit buy 10 PURR 0.08
 
 # Perps example
-hl order limit buy 0.01 BTC 50000
-hl order market sell 0.01 ETH --slippage 0.5
+dpro-hl order limit buy 0.01 BTC 50000
+dpro-hl order market sell 0.01 ETH --slippage 0.5
 
 # HIP-3 example
-hl order limit buy 1 xyz:NVDA 120
-hl order cancel <oid>
+dpro-hl order limit buy 1 xyz:NVDA 120
+dpro-hl order cancel <oid>
 ```
 
 ### HIP-3 Trading Demos
 ```bash
 # Always discover exact coin values first (strict match)
-hl markets ls
+dpro-hl markets ls
 
 # Example HIP-3 orders (use exact coin from markets list)
-hl order limit buy 1 xyz:NVDA 120
-hl order market sell 1 xyz:NVDA --slippage 0.5
-hl order cancel-by-cloid xyz:NVDA <cloid>
+dpro-hl order limit buy 1 xyz:NVDA 120
+dpro-hl order market sell 1 xyz:NVDA --slippage 0.5
+dpro-hl order cancel-by-cloid xyz:NVDA <cloid>
 
 # Perps/HIP-3-perps risk controls (not spot)
-hl order set-leverage xyz:NVDA 5 --cross
-hl order topup-isolated xyz:NVDA 50
+dpro-hl order set-leverage xyz:NVDA 5 --cross
+dpro-hl order topup-isolated xyz:NVDA 50
 ```
 
 ### Onchain
 ```bash
-hl onchain health
-hl onchain mids
-hl onchain spot-holders PURR --limit 5
-hl onchain perp-holders BTC --limit 5 --order desc
-hl onchain leaderboard --limit 10
+dpro-hl onchain health
+dpro-hl onchain mids
+dpro-hl onchain spot-holders PURR --limit 5
+dpro-hl onchain perp-holders BTC --limit 5 --order desc
+dpro-hl onchain leaderboard --limit 10
 ```
 
 ## Operation Flow
@@ -125,10 +125,10 @@ hl onchain leaderboard --limit 10
 - External onchain API read -> `onchain ...`
 
 ### Step 2: Collect Required Parameters
-- Missing `coin` -> ask for exact symbol from `hl markets ls` (spot/perps/HIP-3 all require exact match)
+- Missing `coin` -> ask for exact symbol from `dpro-hl markets ls` (spot/perps/HIP-3 all require exact match)
 - Missing account context for reads -> use default account or explicit alias/address
 - For any trade write (`order ...`, `set-leverage`, `topup-isolated`, `approve-builder`), run preflight checks in order:
-  - 1) Check accounts first: run `hl account ls`
+  - 1) Check accounts first: run `dpro-hl account ls`
   - 2) If no API account exists: prompt API wallet setup (`add-api`)
   - 3) If an API account already exists: do not ask user to re-bind account; only require password
 - Missing password for writes -> require `runtimeContext.password` or `--password`
@@ -162,7 +162,7 @@ hl onchain leaderboard --limit 10
 
 ## Prompting for API Keys
 
-Only use this section when `hl account ls` confirms there is no API account configured.
+Only use this section when `dpro-hl account ls` confirms there is no API account configured.
 
 When user has no API account configured:
 
@@ -170,7 +170,7 @@ When user has no API account configured:
    - `https://app.hyperliquid.xyz/join/DPRO1`
 2. Ask user to create API wallet at `https://app.hyperliquid.xyz/API`
 3. Ask user to run:
-   - `hl account add-api <masterAddress> <agentPrivateKey> [alias]`
+   - `dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]`
 4. Remind security rules:
    - do not paste private keys into chat logs
    - pass password through runtime context or `--password`
@@ -187,7 +187,7 @@ Example prompt to user:
 > 2. Go to https://app.hyperliquid.xyz/API
 > 3. Click \"Create API Wallet\" (name it as you like)
 > 4. Copy the private key (starts with `0x`)
-> 5. Run `hl account add-api <masterAddress> <agentPrivateKey> [alias]`
+> 5. Run `dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]`
 >
 > If you want, I can guide you step by step.
 

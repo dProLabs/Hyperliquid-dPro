@@ -49,7 +49,7 @@ export const DEFAULT_SLIPPAGE_PCT = 0.5; // 0.5%
 export const DEFAULT_AUTO_UPGRADE_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
 // Config paths
-export const CONFIG_DIR = '.config/hyperliquid-dpro';
+export const CONFIG_DIR = '.config/dpro-hl';
 export const CONFIG_FILE = 'config.json';
 export const UPGRADE_STATE_FILE = 'upgrade-state.json';
 export const KEYS_FILE = 'keys.enc';

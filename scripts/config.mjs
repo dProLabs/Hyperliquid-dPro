@@ -4,10 +4,27 @@ import { homedir } from 'node:os';
 import { CONFIG_DIR, CONFIG_FILE, UPGRADE_STATE_FILE } from './constants.mjs';
 
 const configDir = join(homedir(), CONFIG_DIR);
+const legacyConfigDir = join(homedir(), '.config/hyperliquid-dpro');
 const configPath = join(configDir, CONFIG_FILE);
 const upgradeStatePath = join(configDir, UPGRADE_STATE_FILE);
 
+export function __migrateLegacyConfigDirForTest(nextConfigDir, previousConfigDir, deps = {}) {
+  const exists = deps.existsSync || existsSync;
+  const rename = deps.renameSync || renameSync;
+
+  if (exists(nextConfigDir)) return false;
+  if (!exists(previousConfigDir)) return false;
+
+  try {
+    rename(previousConfigDir, nextConfigDir);
+    return true;
+  } catch (err) {
+    throw new Error(`Failed to migrate config directory from "${previousConfigDir}" to "${nextConfigDir}": ${err.message}`);
+  }
+}
+
 function ensureDir() {
+  __migrateLegacyConfigDirForTest(configDir, legacyConfigDir);
   if (!existsSync(configDir)) {
     mkdirSync(configDir, { recursive: true });
   }

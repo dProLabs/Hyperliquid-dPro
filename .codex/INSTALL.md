@@ -1,6 +1,6 @@
 # Installing Hyperliquid-dPro for Codex
 
-Enable `hyperliquid-dpro` in Codex via native skill discovery.
+Enable `dpro-hl` in Codex via native skill discovery.
 
 ## Prerequisites
 
@@ -12,13 +12,13 @@ Enable `hyperliquid-dpro` in Codex via native skill discovery.
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/dProLabs/Hyperliquid-dPro ~/.codex/hyperliquid-dpro
+   git clone https://github.com/dProLabs/Hyperliquid-dPro ~/.codex/dpro-hl
    ```
 
 2. **Install dependencies:**
 
    ```bash
-   cd ~/.codex/hyperliquid-dpro
+   cd ~/.codex/dpro-hl
    npm install
    ```
 
@@ -26,14 +26,14 @@ Enable `hyperliquid-dpro` in Codex via native skill discovery.
 
    ```bash
    mkdir -p ~/.agents/skills
-   ln -s ~/.codex/hyperliquid-dpro ~/.agents/skills/hyperliquid-dpro
+   ln -s ~/.codex/dpro-hl ~/.agents/skills/dpro-hl
    ```
 
    **Windows (PowerShell):**
 
    ```powershell
    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.agents\skills"
-   cmd /c mklink /J "$env:USERPROFILE\.agents\skills\hyperliquid-dpro" "$env:USERPROFILE\.codex\hyperliquid-dpro"
+   cmd /c mklink /J "$env:USERPROFILE\.agents\skills\dpro-hl" "$env:USERPROFILE\.codex\dpro-hl"
    ```
 
 4. **Restart Codex** (quit and relaunch the CLI) to discover the skill.
@@ -41,14 +41,14 @@ Enable `hyperliquid-dpro` in Codex via native skill discovery.
 ## Verify
 
 ```bash
-ls -la ~/.agents/skills/hyperliquid-dpro
-test -f ~/.agents/skills/hyperliquid-dpro/SKILL.md && echo "OK: SKILL.md found"
+ls -la ~/.agents/skills/dpro-hl
+test -f ~/.agents/skills/dpro-hl/SKILL.md && echo "OK: SKILL.md found"
 ```
 
 ## Updating
 
 ```bash
-cd ~/.codex/hyperliquid-dpro && git pull && npm install
+cd ~/.codex/dpro-hl && git pull && npm install
 ```
 
 For git-clone installs, this skill also performs auto-upgrade checks on every invocation:
@@ -63,22 +63,22 @@ For clawhub-managed installs, auto-upgrade runs:
 Disable or tune auto-upgrade:
 
 ```bash
-export HL_AUTO_UPGRADE=0
-export HL_AUTO_UPGRADE_TIMEOUT_MS=2000
-export HL_AUTO_UPGRADE_PROVIDER=auto
-export HL_AUTO_UPGRADE_CHECK_INTERVAL_MS=900000
-export HL_AUTO_UPGRADE_CLAWHUB_CMD=clawhub
-export HL_AUTO_UPGRADE_DISABLE_NPM=1
+export DPRO_HL_AUTO_UPGRADE=0
+export DPRO_HL_AUTO_UPGRADE_TIMEOUT_MS=2000
+export DPRO_HL_AUTO_UPGRADE_PROVIDER=auto
+export DPRO_HL_AUTO_UPGRADE_CHECK_INTERVAL_MS=900000
+export DPRO_HL_AUTO_UPGRADE_CLAWHUB_CMD=clawhub
+export DPRO_HL_AUTO_UPGRADE_DISABLE_NPM=1
 ```
 
 ## Uninstalling
 
 ```bash
-rm ~/.agents/skills/hyperliquid-dpro
+rm ~/.agents/skills/dpro-hl
 ```
 
 Optionally delete the clone:
 
 ```bash
-rm -rf ~/.codex/hyperliquid-dpro
+rm -rf ~/.codex/dpro-hl
 ```

@@ -205,8 +205,8 @@ const formatters = {
         'Next steps:',
         '1. Connect wallet and sign in to Hyperliquid: https://app.hyperliquid.xyz/join/DPRO1',
         '2. Create an API wallet at https://app.hyperliquid.xyz/API',
-        '3. Run: hl account add-api <masterAddress> <agentPrivKey> [alias]',
-        '4. Optional read-only mode: hl account add-readonly <address> [alias]',
+        '3. Run: dpro-hl account add-api <masterAddress> <agentPrivKey> [alias]',
+        '4. Optional read-only mode: dpro-hl account add-readonly <address> [alias]',
       ].join('\n');
       return `Accounts (0)\n\n${table}\n\n${hint}`;
     }

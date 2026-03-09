@@ -76,8 +76,8 @@ describe('formatResult', () => {
     assert.ok(out.includes('No accounts configured.'));
     assert.ok(out.includes('1. Connect wallet and sign in to Hyperliquid: https://app.hyperliquid.xyz/join/DPRO1'));
     assert.ok(out.includes('2. Create an API wallet at https://app.hyperliquid.xyz/API'));
-    assert.ok(out.includes('3. Run: hl account add-api <masterAddress> <agentPrivKey> [alias]'));
-    assert.ok(out.includes('4. Optional read-only mode: hl account add-readonly <address> [alias]'));
+    assert.ok(out.includes('3. Run: dpro-hl account add-api <masterAddress> <agentPrivKey> [alias]'));
+    assert.ok(out.includes('4. Optional read-only mode: dpro-hl account add-readonly <address> [alias]'));
   });
 
   it('formats order result - resting', () => {

@@ -40,7 +40,7 @@ async function resolveAssetWithHints(coin, isTestnet = false) {
     const hints = [];
     if (related.length) hints.push(`Related symbols: ${related.join(', ')}.`);
     if (String(coin).includes(':') || related.some(s => s.includes(':'))) {
-      hints.push('AAPL and xyz:AAPL are different assets; use the exact coin from "hl markets ls".');
+      hints.push('AAPL and xyz:AAPL are different assets; use the exact coin from "dpro-hl markets ls".');
     }
     throw assetNotFound(coin, hints.join(' '));
   }
@@ -229,7 +229,7 @@ async function market(parsed, ctx) {
 
 async function cancel(parsed, ctx) {
   const oid = parsed.target;
-  if (!oid) throw inputError('Usage: hl order cancel <oid>');
+  if (!oid) throw inputError('Usage: dpro-hl order cancel <oid>');
 
   const { account, privateKey, isTestnet } = getTradeContext(parsed, ctx);
 
@@ -280,7 +280,7 @@ async function cancelAll(parsed, ctx) {
 async function cancelByCloid(parsed, ctx) {
   const coin = assertCoin(parsed.target);
   const cloid = parsed.args?.cloid;
-  if (!cloid) throw inputError('Usage: hl order cancel-by-cloid <coin> <cloid>');
+  if (!cloid) throw inputError('Usage: dpro-hl order cancel-by-cloid <coin> <cloid>');
 
   const { account, privateKey, isTestnet } = getTradeContext(parsed, ctx);
   const assetInfo = await resolveAssetWithHints(coin, isTestnet);

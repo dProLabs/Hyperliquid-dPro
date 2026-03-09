@@ -4,11 +4,23 @@ import { inputError, unknownCommand } from './errors.mjs';
 
 function stripPrefix(raw) {
   const trimmed = raw.trim();
-  if (trimmed.startsWith('/hl ') || trimmed.startsWith('/hl\t')) return trimmed.slice(4).trim();
-  if (trimmed === '/hl') return '';
-  if (trimmed.startsWith('hl ') || trimmed.startsWith('hl\t')) return trimmed.slice(3).trim();
-  if (trimmed === 'hl') return '';
+  if (trimmed.startsWith('/dpro-hl ') || trimmed.startsWith('/dpro-hl\t')) return trimmed.slice(9).trim();
+  if (trimmed === '/dpro-hl') return '';
+  if (trimmed.startsWith('dpro-hl ') || trimmed.startsWith('dpro-hl\t')) return trimmed.slice(8).trim();
+  if (trimmed === 'dpro-hl') return '';
   return null; // no prefix found — try natural language
+}
+
+function hasLegacyPrefix(raw) {
+  const trimmed = raw.trim();
+  return (
+    trimmed.startsWith('/hl ')
+    || trimmed.startsWith('/hl\t')
+    || trimmed === '/hl'
+    || trimmed.startsWith('hl ')
+    || trimmed.startsWith('hl\t')
+    || trimmed === 'hl'
+  );
 }
 
 // --- Tokenizer ---
@@ -269,6 +281,10 @@ export function parseInput(rawInput) {
   const raw = rawInput.trim();
   if (!raw) throw inputError('Empty input');
 
+  if (hasLegacyPrefix(raw)) {
+    throw unknownCommand(`Could not parse input: "${raw}". Use "dpro-hl ..." instead.`);
+  }
+
   // Try prefix-based parsing
   const stripped = stripPrefix(raw);
   if (stripped !== null) {
@@ -281,5 +297,5 @@ export function parseInput(rawInput) {
   const nlResult = parseNaturalLanguage(raw);
   if (nlResult) return nlResult;
 
-  throw unknownCommand(`Could not parse input: "${raw}". Try "hl quote BTC" or "hl help".`);
+  throw unknownCommand(`Could not parse input: "${raw}". Try "dpro-hl quote BTC" or "dpro-hl help".`);
 }

@@ -11,7 +11,7 @@ Use this guide as: **symptom -> likely cause -> direct fix**.
 - strict mismatch (`AAPL` vs `xyz:AAPL`)
 
 **Fix**
-1. Run `hl markets ls`
+1. Run `dpro-hl markets ls`
 2. Copy exact `coin` value
 3. Retry with exact symbol
 
@@ -35,9 +35,9 @@ Use this guide as: **symptom -> likely cause -> direct fix**.
 
 **Fix**
 1. Add API account:
-   `hl account add-api <masterAddress> <agentPrivKey> [alias]`
+   `dpro-hl account add-api <masterAddress> <agentPrivKey> [alias]`
 2. Set default account if needed:
-   `hl account set-default <alias>`
+   `dpro-hl account set-default <alias>`
 3. Retry command
 
 ---
@@ -48,7 +48,7 @@ Use this guide as: **symptom -> likely cause -> direct fix**.
 - no usable mid in response path for requested coin
 
 **Fix**
-1. Validate symbol via `hl markets ls`
+1. Validate symbol via `dpro-hl markets ls`
 2. Retry exact symbol
 3. For namespaced onchain perps, use normalized namespace form
 
@@ -82,5 +82,5 @@ Use this guide as: **symptom -> likely cause -> direct fix**.
 
 **Fix**
 1. Retry once
-2. Check endpoint health (`hl onchain health` or upstream status)
+2. Check endpoint health (`dpro-hl onchain health` or upstream status)
 3. Re-run with `--json` for raw details

@@ -26,7 +26,7 @@ clawhub update github:dProLabs/Hyperliquid-dPro
 To uninstall:
 
 ```bash
-clawhub uninstall hyperliquid-dpro
+clawhub uninstall dpro-hl
 ```
 
 ### For Claude Code
@@ -36,24 +36,24 @@ Use the included plugin manifests:
 ```bash
 # In Claude Code
 /plugin marketplace add dProLabs/Hyperliquid-dPro
-/plugin install hyperliquid-dpro
+/plugin install dpro-hl
 ```
 
 Or install manually:
 
 ```bash
 # Clone into your project's skills directory
-git clone https://github.com/dProLabs/Hyperliquid-dPro.git .claude/skills/hyperliquid-dpro
+git clone https://github.com/dProLabs/Hyperliquid-dPro.git .claude/skills/dpro-hl
 
 # Install dependencies
-cd .claude/skills/hyperliquid-dpro
+cd .claude/skills/dpro-hl
 npm install
 ```
 
 Then in your `CLAUDE.md` or agent config, reference the skill:
 
 ```markdown
-Skills: .claude/skills/hyperliquid-dpro/SKILL.md
+Skills: .claude/skills/dpro-hl/SKILL.md
 ```
 
 Claude plugin files:
@@ -99,11 +99,11 @@ npm install
 Once installed, simply talk to your agent using natural language or command syntax:
 
 ```
-hl quote BTC
-hl book ETH --levels 5
-hl markets ls
-hl positions
-hl order limit buy 0.01 BTC 50000
+dpro-hl quote BTC
+dpro-hl book ETH --levels 5
+dpro-hl markets ls
+dpro-hl positions
+dpro-hl order limit buy 0.01 BTC 50000
 ```
 
 The agent will invoke the skill automatically based on `SKILL.md`.
@@ -114,12 +114,12 @@ The agent will invoke the skill automatically based on `SKILL.md`.
 import { runHyperliquidSkill } from './scripts/entry.mjs';
 
 // Read-only (no account needed)
-const result = await runHyperliquidSkill('hl quote BTC');
+const result = await runHyperliquidSkill('dpro-hl quote BTC');
 console.log(result);
 
 // Trading (password required to decrypt private key)
 const result = await runHyperliquidSkill(
-  'hl order limit buy 0.01 BTC 50000',
+  'dpro-hl order limit buy 0.01 BTC 50000',
   { password: 'yourMasterPassword' }
 );
 ```
@@ -136,12 +136,12 @@ Runtime context:
 - `autoUpgradeDisableNpmInstall`: `boolean` (default `false`) skip `npm install` after successful pull
 
 Auto-upgrade env switches:
-- `HL_AUTO_UPGRADE=0` disable auto-upgrade globally
-- `HL_AUTO_UPGRADE_TIMEOUT_MS=2000` override timeout budget
-- `HL_AUTO_UPGRADE_PROVIDER=auto|git|clawhub|off` force provider routing
-- `HL_AUTO_UPGRADE_CHECK_INTERVAL_MS=900000` set clawhub update check interval
-- `HL_AUTO_UPGRADE_CLAWHUB_CMD=clawhub` set clawhub command alias
-- `HL_AUTO_UPGRADE_DISABLE_NPM=1` skip dependency install step
+- `DPRO_HL_AUTO_UPGRADE=0` disable auto-upgrade globally
+- `DPRO_HL_AUTO_UPGRADE_TIMEOUT_MS=2000` override timeout budget
+- `DPRO_HL_AUTO_UPGRADE_PROVIDER=auto|git|clawhub|off` force provider routing
+- `DPRO_HL_AUTO_UPGRADE_CHECK_INTERVAL_MS=900000` set clawhub update check interval
+- `DPRO_HL_AUTO_UPGRADE_CLAWHUB_CMD=clawhub` set clawhub command alias
+- `DPRO_HL_AUTO_UPGRADE_DISABLE_NPM=1` skip dependency install step
 
 Auto-upgrade behavior:
 - Runs on each `runHyperliquidSkill(...)` invocation
@@ -154,7 +154,7 @@ Auto-upgrade behavior:
 ```bash
 node --input-type=module -e "
   import { runHyperliquidSkill } from './scripts/entry.mjs';
-  console.log(await runHyperliquidSkill('hl quote BTC'));
+  console.log(await runHyperliquidSkill('dpro-hl quote BTC'));
 "
 ```
 
@@ -168,7 +168,7 @@ node --input-type=module -e "
 - **Order Operations** — limit/market, cancel/cancel-all/cancel-by-cloid, builder approval
 - **Risk Controls** — leverage updates and isolated margin top-up (perps/HIP-3-perps only)
 - **Onchain Reads** — mids, metadata, holder distribution, liquidation map, leaderboard
-- **Multi-Input** — command style (`hl quote BTC`), slash style (`/hl quote BTC`), or natural language
+- **Multi-Input** — command style (`dpro-hl quote BTC`), slash style (`/dpro-hl quote BTC`), or natural language
 - **Secure Key Storage** — private keys are AES-encrypted at rest, never stored in plain text
 - **Zero Global Install** — runs as a skill inside agent environments, no `npm install -g` needed
 
@@ -176,17 +176,17 @@ node --input-type=module -e "
 
 ## Account Management
 
-Accounts are stored encrypted at `~/.config/hyperliquid-dpro/`.
+Accounts are stored encrypted at `~/.config/dpro-hl/`.
 
 ### Add Account
 
 **Trading account** (requires API wallet from Hyperliquid):
 
 ```bash
-hl account add-api <masterAddress> <agentPrivateKey> [alias]
+dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]
 
 # Example
-hl account add-api 0xYourMasterAddress 0xYourAgentPrivateKey myaccount
+dpro-hl account add-api 0xYourMasterAddress 0xYourAgentPrivateKey myaccount
 ```
 
 To get an API wallet:
@@ -198,29 +198,29 @@ To get an API wallet:
 Quick validation:
 
 ```bash
-hl account ls
-hl positions <alias>
+dpro-hl account ls
+dpro-hl positions <alias>
 ```
 
 **Read-only account** (monitoring only, no private key needed):
 
 ```bash
-hl account add-readonly <address> [alias]
+dpro-hl account add-readonly <address> [alias]
 ```
 
 ### Account Commands
 
 ```bash
-hl account ls
-hl account add-readonly <address> [alias]
-hl account add-api <masterAddress> <agentPrivateKey> [alias]
-hl account set-default <alias>
-hl account remove <alias>
-hl positions [alias|address]
-hl balances [alias|address]
-hl orders [alias|address]
-hl fills [alias|address] --limit 50
-hl portfolio [alias|address]
+dpro-hl account ls
+dpro-hl account add-readonly <address> [alias]
+dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]
+dpro-hl account set-default <alias>
+dpro-hl account remove <alias>
+dpro-hl positions [alias|address]
+dpro-hl balances [alias|address]
+dpro-hl orders [alias|address]
+dpro-hl fills [alias|address] --limit 50
+dpro-hl portfolio [alias|address]
 ```
 
 Shows all configured accounts with alias, address, mode, and default status.
@@ -234,8 +234,8 @@ View market data without authentication.
 ### Get Quote
 
 ```bash
-hl quote BTC
-hl quote xyz:NVDA
+dpro-hl quote BTC
+dpro-hl quote xyz:NVDA
 ```
 
 Shows price, 24h change, funding rate, open interest, mark/oracle, and 24h volume when available.
@@ -243,14 +243,14 @@ Shows price, 24h change, funding rate, open interest, mark/oracle, and 24h volum
 ### Get Order Book
 
 ```bash
-hl book ETH
-hl book ETH --levels 20
+dpro-hl book ETH
+dpro-hl book ETH --levels 20
 ```
 
 ### Get Candlesticks
 
 ```bash
-hl candles BTC --interval 1h --last 48
+dpro-hl candles BTC --interval 1h --last 48
 ```
 
 Valid intervals: `1m`, `3m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `8h`, `12h`, `1d`, `3d`, `1w`, `1M`
@@ -258,7 +258,7 @@ Valid intervals: `1m`, `3m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `8h`, `12h`, 
 ### List All Markets
 
 ```bash
-hl markets ls
+dpro-hl markets ls
 ```
 
 Shows spot, perp, and namespaced markets with type and asset ID.
@@ -266,10 +266,10 @@ Shows spot, perp, and namespaced markets with type and asset ID.
 ### Top Movers and Overview
 
 ```bash
-hl movers --top 10
-hl movers --side gainers
-hl movers --side losers
-hl overview --top 10
+dpro-hl movers --top 10
+dpro-hl movers --side gainers
+dpro-hl movers --side losers
+dpro-hl overview --top 10
 ```
 
 ---
@@ -281,10 +281,10 @@ API account with private key required.
 ### Place Limit Order
 
 ```bash
-hl order limit buy  0.001 BTC 50000
-hl order limit sell 0.1 ETH 3500 --tif Gtc
-hl order limit buy  1 xyz:NVDA 120
-hl order limit buy  1 SOL 100 --reduce-only
+dpro-hl order limit buy  0.001 BTC 50000
+dpro-hl order limit sell 0.1 ETH 3500 --tif Gtc
+dpro-hl order limit buy  1 xyz:NVDA 120
+dpro-hl order limit buy  1 SOL 100 --reduce-only
 ```
 
 | Option | Description |
@@ -295,9 +295,9 @@ hl order limit buy  1 SOL 100 --reduce-only
 ### Place Market Order
 
 ```bash
-hl order market buy  0.001 BTC
-hl order market sell 0.1 ETH --slippage 0.5
-hl order market sell 1 xyz:NVDA --slippage 0.3
+dpro-hl order market buy  0.001 BTC
+dpro-hl order market sell 0.1 ETH --slippage 0.5
+dpro-hl order market sell 1 xyz:NVDA --slippage 0.3
 ```
 
 Market orders are executed as IOC limit orders with slippage protection.
@@ -311,29 +311,29 @@ Market orders are executed as IOC limit orders with slippage protection.
 
 ```bash
 # Cancel specific order
-hl order cancel <oid>
+dpro-hl order cancel <oid>
 
 # Cancel all open orders
-hl order cancel-all
+dpro-hl order cancel-all
 
 # Cancel with cloid
-hl order cancel-by-cloid xyz:NVDA <cloid>
+dpro-hl order cancel-by-cloid xyz:NVDA <cloid>
 
 # Approve builder fee
-hl approve-builder
+dpro-hl approve-builder
 ```
 
 ### Perp/HIP-3 Perp Risk Controls
 
 ```bash
 # Cross margin (default)
-hl order set-leverage BTC 10
-hl order set-leverage xyz:NVDA 5 --cross
+dpro-hl order set-leverage BTC 10
+dpro-hl order set-leverage xyz:NVDA 5 --cross
 
 # Isolated margin
-hl order set-leverage BTC 10 --isolated
-hl order topup-isolated BTC 100
-hl order topup-isolated xyz:NVDA 50
+dpro-hl order set-leverage BTC 10 --isolated
+dpro-hl order topup-isolated BTC 100
+dpro-hl order topup-isolated xyz:NVDA 50
 ```
 
 Note: leverage and isolated top-up are not supported on spot markets.
@@ -342,18 +342,18 @@ Note: leverage and isolated top-up are not supported on spot markets.
 
 ## Onchain Reads
 
-Onchain read commands are available under `hl onchain ...`.
+Onchain read commands are available under `dpro-hl onchain ...`.
 
 ```bash
-hl onchain health
-hl onchain mids
-hl onchain spot-meta
-hl onchain perps-meta
-hl onchain spot-holders PURR --limit 5
-hl onchain spot-holder-counts
-hl onchain perp-holders BTC --limit 5 --order desc
-hl onchain liquidation-map xyz:TSLA
-hl onchain leaderboard --limit 10 --sort pnl_day --order desc
+dpro-hl onchain health
+dpro-hl onchain mids
+dpro-hl onchain spot-meta
+dpro-hl onchain perps-meta
+dpro-hl onchain spot-holders PURR --limit 5
+dpro-hl onchain spot-holder-counts
+dpro-hl onchain perp-holders BTC --limit 5 --order desc
+dpro-hl onchain liquidation-map xyz:TSLA
+dpro-hl onchain leaderboard --limit 10 --sort pnl_day --order desc
 ```
 
 Notes:
@@ -377,8 +377,8 @@ Notes:
 Three equivalent ways to invoke:
 
 ```bash
-hl quote BTC                       # Command style
-/hl quote BTC                      # Slash style (in agent chat)
+dpro-hl quote BTC                       # Command style
+/dpro-hl quote BTC                      # Slash style (in agent chat)
 BTC price                          # English natural language
 SOL 1h candles last 48             # Candles
 buy 0.1 BTC                        # Natural language trading
@@ -393,59 +393,59 @@ short 0.1 ETH                      # Natural language trading
 
 ```bash
 # Check BTC price and funding
-hl quote BTC
+dpro-hl quote BTC
 
 # See top movers
-hl movers --top 5
+dpro-hl movers --top 5
 
 # Check order book depth
-hl book ETH --levels 10
+dpro-hl book ETH --levels 10
 
 # Check onchain mids
-hl onchain mids
+dpro-hl onchain mids
 ```
 
 ### Trading Workflow
 
 ```bash
 # 1. Check available markets
-hl markets ls
+dpro-hl markets ls
 
 # 2. Check your balance
-hl balances
+dpro-hl balances
 
 # 3. Set leverage
-hl order set-leverage BTC 5
+dpro-hl order set-leverage BTC 5
 
 # 4. Place a limit order
-hl order limit buy 0.001 BTC 50000
+dpro-hl order limit buy 0.001 BTC 50000
 
 # 5. Check open orders
-hl orders
+dpro-hl orders
 
 # 6. Check positions
-hl positions
+dpro-hl positions
 ```
 
 ### HIP-3 Workflow
 
 ```bash
 # Discover exact symbol first
-hl markets ls
+dpro-hl markets ls
 
 # HIP-3 quote and trading
-hl quote xyz:NVDA
-hl order limit buy 1 xyz:NVDA 120
-hl order market sell 1 xyz:NVDA --slippage 0.5
+dpro-hl quote xyz:NVDA
+dpro-hl order limit buy 1 xyz:NVDA 120
+dpro-hl order market sell 1 xyz:NVDA --slippage 0.5
 ```
 
 ### Scripting with JSON Output
 
 ```bash
 # Get raw JSON for automation
-hl quote BTC --json
-hl positions --json
-hl onchain leaderboard --json
+dpro-hl quote BTC --json
+dpro-hl positions --json
+dpro-hl onchain leaderboard --json
 ```
 
 ---
@@ -456,9 +456,9 @@ hl onchain leaderboard --json
 
 | Path | Description |
 |------|-------------|
-| `~/.config/hyperliquid-dpro/config.json` | Account list, default account, network setting |
-| `~/.config/hyperliquid-dpro/keys.enc` | AES-encrypted agent private keys |
-| `~/.config/hyperliquid-dpro/upgrade-state.json` | Auto-upgrade check/update state and warning dedupe metadata |
+| `~/.config/dpro-hl/config.json` | Account list, default account, network setting |
+| `~/.config/dpro-hl/keys.enc` | AES-encrypted agent private keys |
+| `~/.config/dpro-hl/upgrade-state.json` | Auto-upgrade check/update state and warning dedupe metadata |
 
 Private keys are **never stored in plain text**. A master password is required to encrypt/decrypt keys.
 
@@ -509,7 +509,7 @@ scripts/
 # Smoke test
 node --input-type=module -e "
   import { runHyperliquidSkill } from './scripts/entry.mjs';
-  console.log(await runHyperliquidSkill('hl quote BTC'));
+  console.log(await runHyperliquidSkill('dpro-hl quote BTC'));
 "
 ```
 

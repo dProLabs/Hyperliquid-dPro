@@ -41,7 +41,7 @@ function normalizeProvider(value) {
 
 function isEnabled(runtimeContext, env) {
   if (runtimeContext.autoUpgrade === false) return false;
-  if (String(env.HL_AUTO_UPGRADE || '').trim() === '0') return false;
+  if (String(env.DPRO_HL_AUTO_UPGRADE || '').trim() === '0') return false;
   return true;
 }
 
@@ -86,7 +86,7 @@ function detectInstallMode(skillRoot, deps) {
 
 function resolveProvider(runtimeContext, deps, installMode) {
   const providerSetting = normalizeProvider(
-    runtimeContext.autoUpgradeProvider ?? deps.env.HL_AUTO_UPGRADE_PROVIDER,
+    runtimeContext.autoUpgradeProvider ?? deps.env.DPRO_HL_AUTO_UPGRADE_PROVIDER,
   );
 
   if (providerSetting === 'off') return 'off';
@@ -174,7 +174,7 @@ async function runGitUpgrade(runtimeContext, deps, state, skillRoot, installMode
   const startedAtMs = deps.now();
   const dryRun = runtimeContext.autoUpgradeDryRun === true;
   const disableNpmInstall = runtimeContext.autoUpgradeDisableNpmInstall === true
-    || String(deps.env.HL_AUTO_UPGRADE_DISABLE_NPM || '').trim() === '1';
+    || String(deps.env.DPRO_HL_AUTO_UPGRADE_DISABLE_NPM || '').trim() === '1';
 
   try {
     const status = await execStep(deps, skillRoot, 'git', ['status', '--porcelain', '--untracked-files=no'], startedAtMs, timeoutMs);
@@ -267,7 +267,7 @@ async function runClawhubUpgrade(runtimeContext, deps, state, skillRoot, install
   }
 
   const intervalMs = parsePositiveInt(
-    runtimeContext.autoUpgradeCheckIntervalMs ?? deps.env.HL_AUTO_UPGRADE_CHECK_INTERVAL_MS,
+    runtimeContext.autoUpgradeCheckIntervalMs ?? deps.env.DPRO_HL_AUTO_UPGRADE_CHECK_INTERVAL_MS,
     DEFAULT_AUTO_UPGRADE_INTERVAL_MS,
   );
   const nowMs = deps.now();
@@ -280,7 +280,7 @@ async function runClawhubUpgrade(runtimeContext, deps, state, skillRoot, install
 
   const clawhubCmd = String(
     runtimeContext.autoUpgradeClawhubCmd
-      ?? deps.env.HL_AUTO_UPGRADE_CLAWHUB_CMD
+      ?? deps.env.DPRO_HL_AUTO_UPGRADE_CLAWHUB_CMD
       ?? 'clawhub',
   ).trim() || 'clawhub';
   const startedAtMs = deps.now();
@@ -301,7 +301,7 @@ async function runClawhubUpgrade(runtimeContext, deps, state, skillRoot, install
     await execStep(deps, skillRoot, clawhubCmd, ['--version'], startedAtMs, timeoutMs);
 
     const packageJson = readJsonFile(packageJsonPath, deps) || {};
-    const packageName = typeof packageJson.name === 'string' ? packageJson.name : 'hyperliquid-dpro';
+    const packageName = typeof packageJson.name === 'string' ? packageJson.name : 'dpro-hl';
     const lockData = readJsonFile(join(skillRoot, '.clawhub', 'lock.json'), deps);
     const skillSlug = resolveSkillSlugFromLock(lockData, packageName);
 
@@ -343,7 +343,7 @@ async function runUpgrade(runtimeContext, deps) {
   const installMode = detectInstallMode(skillRoot, deps);
   const provider = resolveProvider(runtimeContext, deps, installMode);
   const timeoutMs = parsePositiveInt(
-    runtimeContext.autoUpgradeTimeoutMs ?? deps.env.HL_AUTO_UPGRADE_TIMEOUT_MS,
+    runtimeContext.autoUpgradeTimeoutMs ?? deps.env.DPRO_HL_AUTO_UPGRADE_TIMEOUT_MS,
     DEFAULT_TIMEOUT_MS,
   );
   const state = deps.loadState();

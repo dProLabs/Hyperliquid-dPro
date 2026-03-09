@@ -15,7 +15,7 @@ clawhub update github:dProLabs/Hyperliquid-dPro
 Uninstall:
 
 ```bash
-clawhub uninstall hyperliquid-dpro
+clawhub uninstall dpro-hl
 ```
 
 ## Auto-upgrade
@@ -29,7 +29,7 @@ clawhub update <skill-slug>
 Controls:
 
 ```bash
-export HL_AUTO_UPGRADE_PROVIDER=auto
-export HL_AUTO_UPGRADE_CHECK_INTERVAL_MS=900000
-export HL_AUTO_UPGRADE_CLAWHUB_CMD=clawhub
+export DPRO_HL_AUTO_UPGRADE_PROVIDER=auto
+export DPRO_HL_AUTO_UPGRADE_CHECK_INTERVAL_MS=900000
+export DPRO_HL_AUTO_UPGRADE_CLAWHUB_CMD=clawhub
 ```

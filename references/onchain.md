@@ -17,16 +17,16 @@ Base URL configuration is not required.
 
 | Command | Method | Path |
 |---|---|---|
-| `hl onchain ping` | GET | `/api/v1` |
-| `hl onchain health` | GET | `/api/v1/health` |
-| `hl onchain mids` | GET | `/api/v1/hl/prices/mids` |
-| `hl onchain spot-meta` | GET | `/api/v1/hl/meta/spot` |
-| `hl onchain perps-meta` | GET | `/api/v1/hl/meta/perps-universe` |
-| `hl onchain spot-holders` | GET | `/api/v1/hl/spot/holders` |
-| `hl onchain spot-holder-counts` | GET | `/api/v1/hl/spot/holders/counts` |
-| `hl onchain perp-holders` | GET | `/api/v1/hl/perp/holders` |
-| `hl onchain liquidation-map` | GET | `/api/v1/hl/perp/liquidation-map` |
-| `hl onchain leaderboard` | GET | `/api/v1/leaderboard` |
+| `dpro-hl onchain ping` | GET | `/api/v1` |
+| `dpro-hl onchain health` | GET | `/api/v1/health` |
+| `dpro-hl onchain mids` | GET | `/api/v1/hl/prices/mids` |
+| `dpro-hl onchain spot-meta` | GET | `/api/v1/hl/meta/spot` |
+| `dpro-hl onchain perps-meta` | GET | `/api/v1/hl/meta/perps-universe` |
+| `dpro-hl onchain spot-holders` | GET | `/api/v1/hl/spot/holders` |
+| `dpro-hl onchain spot-holder-counts` | GET | `/api/v1/hl/spot/holders/counts` |
+| `dpro-hl onchain perp-holders` | GET | `/api/v1/hl/perp/holders` |
+| `dpro-hl onchain liquidation-map` | GET | `/api/v1/hl/perp/liquidation-map` |
+| `dpro-hl onchain leaderboard` | GET | `/api/v1/leaderboard` |
 
 ---
 
@@ -82,10 +82,10 @@ Rule: `dex` lowercase + `asset` uppercase.
 ## Examples
 
 ```bash
-hl onchain health
-hl onchain mids
-hl onchain spot-holders PURR --limit 5
-hl onchain perp-holders XYZ:NVDA --limit 5 --order desc
-hl onchain liquidation-map xyz:TSLA
-hl onchain leaderboard --limit 10 --sort pnl_day --order desc
+dpro-hl onchain health
+dpro-hl onchain mids
+dpro-hl onchain spot-holders PURR --limit 5
+dpro-hl onchain perp-holders XYZ:NVDA --limit 5 --order desc
+dpro-hl onchain liquidation-map xyz:TSLA
+dpro-hl onchain leaderboard --limit 10 --sort pnl_day --order desc
 ```

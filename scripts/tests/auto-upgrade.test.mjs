@@ -18,7 +18,7 @@ function makeDeps(overrides = {}) {
   };
 
   const files = {
-    '/tmp/skill/package.json': JSON.stringify({ name: 'hyperliquid-dpro' }),
+    '/tmp/skill/package.json': JSON.stringify({ name: 'dpro-hl' }),
     '/tmp/skill/.clawhub/lock.json': JSON.stringify({
       version: 1,
       skills: { 'hyperliquid-cli': { version: '1.0.3' } },
@@ -48,7 +48,7 @@ function makeDeps(overrides = {}) {
       if (joined === 'git pull --ff-only origin main') return { stdout: '' };
       if (joined === 'npm install --silent') return { stdout: '' };
       if (joined === 'clawhub --version') return { stdout: 'clawhub 1.0.0\n' };
-      if (joined === 'clawhub update hyperliquid-dpro') return { stdout: 'updated\n' };
+      if (joined === 'clawhub update dpro-hl') return { stdout: 'updated\n' };
       return { stdout: '' };
     },
     ...overrides,
@@ -107,7 +107,7 @@ describe('auto-upgrade', () => {
     assert.equal(result.provider, 'clawhub');
     assert.equal(result.installMode, 'clawhub-managed');
     assert.equal(calls.includes('clawhub --version'), true);
-    assert.equal(calls.includes('clawhub update hyperliquid-dpro'), true);
+    assert.equal(calls.includes('clawhub update dpro-hl'), true);
   });
 
   it('falls back to package name when lock skills key mismatches', async () => {
@@ -120,7 +120,7 @@ describe('auto-upgrade', () => {
     }));
 
     await maybeAutoUpgrade({}, deps);
-    assert.equal(calls.includes('clawhub update hyperliquid-dpro'), true);
+    assert.equal(calls.includes('clawhub update dpro-hl'), true);
   });
 
   it('supports custom clawhub command alias', async () => {
@@ -136,7 +136,7 @@ describe('auto-upgrade', () => {
 
     const result = await maybeAutoUpgrade({ autoUpgradeClawhubCmd: 'openclaw' }, deps);
     assert.equal(result.provider, 'clawhub');
-    assert.equal(calls.includes('openclaw update hyperliquid-dpro'), true);
+    assert.equal(calls.includes('openclaw update dpro-hl'), true);
   });
 
   it('does not rerun clawhub update within check interval', async () => {
@@ -152,7 +152,7 @@ describe('auto-upgrade', () => {
   });
 
   it('supports provider off via env', async () => {
-    const { deps, calls } = makeDeps({ env: { HL_AUTO_UPGRADE_PROVIDER: 'off' } });
+    const { deps, calls } = makeDeps({ env: { DPRO_HL_AUTO_UPGRADE_PROVIDER: 'off' } });
     const result = await maybeAutoUpgrade({}, deps);
     assert.equal(result.skippedReason, 'disabled-provider');
     assert.equal(result.provider, 'none');

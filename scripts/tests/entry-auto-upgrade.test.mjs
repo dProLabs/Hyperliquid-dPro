@@ -15,7 +15,7 @@ describe('entry auto-upgrade integration', () => {
       warning: 'Auto-upgrade failed: network issue',
     }));
 
-    const output = await runHyperliquidSkill('hl');
+    const output = await runHyperliquidSkill('dpro-hl');
     assert.match(output, /Hyperliquid-dPro/);
     assert.match(output, /Warnings:/);
     assert.match(output, /Auto-upgrade failed/i);
@@ -29,7 +29,7 @@ describe('entry auto-upgrade integration', () => {
       return { attempted: false, updated: false, skippedReason: 'disabled', warning: null };
     });
 
-    const output = await runHyperliquidSkill('hl', { autoUpgrade: false });
+    const output = await runHyperliquidSkill('dpro-hl', { autoUpgrade: false });
     assert.match(output, /Hyperliquid-dPro/);
     assert.equal(called, 1);
   });
@@ -42,7 +42,7 @@ describe('entry auto-upgrade integration', () => {
       warning: 'Auto-upgrade timed out; command execution continues.',
     }));
 
-    const output = await runHyperliquidSkill('hl --json');
+    const output = await runHyperliquidSkill('dpro-hl --json');
     const parsed = JSON.parse(output);
     assert.equal(parsed.ok, true);
     assert.equal(parsed.type, 'help');
@@ -60,7 +60,7 @@ describe('entry auto-upgrade integration', () => {
       warning: 'Auto-upgrade failed: spawn clawhub ENOENT',
     }));
 
-    const output = await runHyperliquidSkill('hl');
+    const output = await runHyperliquidSkill('dpro-hl');
     assert.match(output, /Warnings:/);
     assert.match(output, /clawhub ENOENT/i);
   });
