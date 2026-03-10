@@ -89,10 +89,13 @@ Accepted user input forms include:
 ### Execution bridge
 Use runtime invocation first. If unavailable, execute via Node entrypoint:
 
+```bash
 node --input-type=module -e "
   import { runHyperliquidSkill } from './scripts/entry.mjs';
   console.log(await runHyperliquidSkill('dpro-hl quote BTC'));
 "
+```
+
 ---
 
 ## Canonical command families
