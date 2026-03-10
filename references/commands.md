@@ -12,6 +12,14 @@ These flags can be used across commands when applicable.
 | `--account <alias>` | Select account alias for account/trade queries |
 | `--password <password>` | Provide master password for encrypted API-key operations |
 
+### Password Cache Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `DPRO_HL_PASSWORD_CACHE` | Enable process-crossing password session cache (`1`/`0`) | `1` |
+| `DPRO_HL_PASSWORD_CACHE_TTL_SEC` | Cache TTL in seconds | `21600` |
+| `DPRO_HL_PASSWORD_CACHE_FILE` | Override cache file path | `${HOME}/.config/dpro-hl/password-session.json` |
+
 ---
 
 ## Input Modes
@@ -107,6 +115,10 @@ Remove account by alias.
 ### `dpro-hl account set-default <alias>`
 
 Set default account.
+
+### `dpro-hl account clear-password-cache`
+
+Clear local password session cache file.
 
 ---
 

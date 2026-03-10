@@ -94,14 +94,36 @@ Use this class when the request could not reliably reach the upstream service or
 2. For repeated commands in separate processes, export once and reuse:
    - `export DPRO_HL_MASTER_PASSWORD=<YOUR_PASSWORD>` (preferred)
    - or `export MASTER_PASSWORD=<YOUR_PASSWORD>`
-3. Otherwise use the supported secure command path such as `--password`
-4. Re-run the same command once password input is available
+3. Use built-in session cache by providing password once:
+   - `password=<YOUR_PASSWORD>` or `--password <YOUR_PASSWORD>`
+   - cache is reused across new `node -e` processes until TTL expires
+4. Otherwise use the supported secure command path such as `--password`
+5. Re-run the same command once password input is available
 
 **Retry guidance**
 - do not retry until password is provided
 - ask explicitly for password input through supported form:
   - `password=<YOUR_PASSWORD>` or `--password <YOUR_PASSWORD>`
 - do not echo or repeat the provided password value in responses
+
+---
+
+## Password is requested repeatedly even after a successful write
+
+**Likely cause**
+- session cache expired (`DPRO_HL_PASSWORD_CACHE_TTL_SEC`)
+- session cache disabled (`DPRO_HL_PASSWORD_CACHE=0`)
+- cache path is not writable (`DPRO_HL_PASSWORD_CACHE_FILE`)
+
+**Direct fix**
+1. Check cache env vars and remove conflicting overrides
+2. Re-enter password once via `password=<YOUR_PASSWORD>` or `--password <YOUR_PASSWORD>`
+3. If needed, clear stale cache and retry:
+   - `dpro-hl account clear-password-cache`
+
+**Retry guidance**
+- safe to retry after cache settings are corrected
+- do not print password value in logs or chat output
 
 ---
 

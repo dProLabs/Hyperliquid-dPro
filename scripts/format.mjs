@@ -218,6 +218,7 @@ const formatters = {
   'account-added': (d) => `Account "${d.alias}" added (${d.mode}, ${d.masterAddress.slice(0, 10)}...)`,
   'account-removed': (d) => `Account "${d.alias}" removed.`,
   'account-default-set': (d) => `Default account set to "${d.alias}".`,
+  'password-cache-cleared': () => 'Password session cache cleared.',
 
   positions: (d) => {
     if (!d.positions.length) return 'No open positions.';

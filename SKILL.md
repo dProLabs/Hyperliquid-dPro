@@ -281,6 +281,11 @@ If account state is unknown before a write, check `dpro-hl account ls` first.
 If the runtime supports `runtimeContext.password`, prefer that.
 Otherwise use the canonical secure command path supported by the implementation.
 
+Password session cache is enabled by default for this skill runtime:
+- when user provides password once, later commands in the same agent session may reuse cached password across new node processes
+- do not repeatedly ask for password if a write can proceed with cached credentials
+- users may clear cache explicitly with `dpro-hl account clear-password-cache`
+
 When password is missing for a write/decrypt flow, explicitly ask the user to provide it in one of these forms:
 - `password=<YOUR_PASSWORD>` (chat/runtime input form)
 - `--password <YOUR_PASSWORD>` (command form when supported)

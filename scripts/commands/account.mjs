@@ -5,6 +5,7 @@ import { findMarket } from '../resolvers/market-resolver.mjs';
 import { assertAddress, assertPrivateKey } from '../utils/validate.mjs';
 import { inputError } from '../errors.mjs';
 import { DEFAULT_FILL_LIMIT } from '../constants.mjs';
+import { clearCachedPassword } from '../password-cache.mjs';
 
 const defaultDeps = {
   store,
@@ -130,6 +131,11 @@ async function setDefault(parsed) {
   if (!alias) throw deps.inputError('Usage: dpro-hl account set-default <alias>');
   deps.store.setDefaultAccount(alias);
   return { ok: true, type: 'account-default-set', data: { alias } };
+}
+
+async function clearPasswordCache() {
+  clearCachedPassword();
+  return { ok: true, type: 'password-cache-cleared', data: { cleared: true } };
 }
 
 async function positions(parsed, ctx) {
@@ -261,5 +267,6 @@ export function __resetAccountDepsForTest() {
 
 export default {
   addReadonly, addApi, ls, remove, setDefault,
+  clearPasswordCache,
   positions, balances, orders, fills, portfolio,
 };
