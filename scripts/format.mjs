@@ -199,7 +199,7 @@ const formatters = {
 
   'account-ls': (d) => {
     if (!d.accounts.length) {
-      const table = renderTable(['Alias', 'Address', 'Mode', 'Default'], []);
+      const table = renderTable(['Alias', 'MasterAddress', 'AgentAddress', 'Mode', 'MasterKey', 'Default'], []);
       const hint = [
         'No accounts configured.',
         'Next steps:',
@@ -210,12 +210,22 @@ const formatters = {
       ].join('\n');
       return `Accounts (0)\n\n${table}\n\n${hint}`;
     }
-    const headers = ['Alias', 'Address', 'Mode', 'Default'];
-    const rows = d.accounts.map(a => [a.alias, a.masterAddress.slice(0, 10) + '...', a.mode, a.isDefault ? '*' : '']);
+    const headers = ['Alias', 'MasterAddress', 'AgentAddress', 'Mode', 'MasterKey', 'Default'];
+    const rows = d.accounts.map(a => [
+      a.alias,
+      a.masterAddress.slice(0, 10) + '...',
+      a.mode === 'api' && a.agentAddress ? (a.agentAddress.slice(0, 10) + '...') : '—',
+      a.mode,
+      a.hasMasterKey ? 'yes' : 'no',
+      a.isDefault ? '*' : '',
+    ]);
     return `Accounts (${d.accounts.length})\n\n` + renderTable(headers, rows);
   },
 
   'account-added': (d) => `Account "${d.alias}" added (${d.mode}, ${d.masterAddress.slice(0, 10)}...)`,
+  'master-key-added': (d) => `Master key added for ${d.masterAddress}.`,
+  'master-key-updated': (d) => `Master key updated for ${d.masterAddress}.`,
+  'master-key-removed': (d) => `Master key removed for ${d.masterAddress}.`,
   'account-removed': (d) => `Account "${d.alias}" removed.`,
   'account-default-set': (d) => `Default account set to "${d.alias}".`,
   'password-cache-cleared': () => 'Password session cache cleared.',
@@ -285,6 +295,7 @@ const formatters = {
   topup_result: (d) => `Topped up ${d.coin} isolated margin by ${fmtUsd(d.usd)}`,
 
   'approve-builder_result': (d) => `Builder fee approved for ${d.builderAddress}`,
+  transfer_result: (d) => `Transferred ${fmtUsd(d.usd)} from ${d.from} to ${d.to}.`,
 
   'onchain-ping': (d) => `Onchain ping OK\nPath: ${d.path}`,
   'onchain-health': (d) => `Onchain health OK\nPath: ${d.path}`,

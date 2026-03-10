@@ -111,3 +111,13 @@ export async function approveBuilderFee(maxFeeRate, builder, privateKeyHex, _age
     throw classifyAndWrapError(err, 'Approve builder fee rejected');
   }
 }
+
+export async function usdClassTransfer(amount, toPerp, privateKeyHex, _userAddress, opts = {}) {
+  const { isTestnet = false } = opts;
+  const exchange = exchangeClientFactory(privateKeyHex, { isTestnet });
+  try {
+    return await exchange.usdClassTransfer({ amount, toPerp });
+  } catch (err) {
+    throw classifyAndWrapError(err, 'USD class transfer rejected');
+  }
+}

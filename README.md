@@ -21,6 +21,7 @@ Key capabilities include:
 - **Market data**: quotes, books, candles, movers, overview, and market listing
 - **Account workflows**: encrypted multi-account storage, balances, positions, orders, fills, and portfolio views
 - **Trading namespaces**: explicit `spot`, `perp`, and `hip3` order trees
+- **Spot/Perp transfer**: top-level `transfer` command using master-wallet signing
 - **Risk controls**: leverage updates and isolated-margin top-ups for supported perp-style markets
 - **Onchain analytics**: mids, metadata, holder distribution, liquidation maps, and leaderboard views
 - **Flexible invocation**: canonical command syntax, slash-style input, or natural language
@@ -130,6 +131,7 @@ dpro-hl book ETH --levels 5
 dpro-hl markets ls
 dpro-hl positions
 dpro-hl perp order limit buy 0.01 BTC 50000
+dpro-hl transfer 10 --to perp
 ```
 
 The agent should route requests through `SKILL.md` and resolve them into the command surface defined by the repository.
@@ -180,8 +182,10 @@ For failure diagnosis and fixes, use:
 ## Safety highlights
 
 - live writes require explicit market namespace: `spot`, `perp`, or `hip3`
+- spot/perp transfer uses top-level command: `dpro-hl transfer <usd> [--to perp|spot]`
 - verify exact tradable symbols with `dpro-hl markets ls`
 - use API accounts (not read-only) for write actions
+- configure a master key for transfer signing: `dpro-hl account add-master <masterAddress> <masterPrivKey> --password <password>`
 - prefer runtime password input over inline password flags
 - onchain reads are read-only and use fixed base URL `https://api.d.pro/`
 
@@ -205,6 +209,8 @@ dpro-hl markets ls
 dpro-hl balances
 dpro-hl perp order set-leverage BTC 5
 dpro-hl perp order limit buy 0.001 BTC 50000
+dpro-hl account add-master 0x<masterAddress> 0x<masterPrivKey> --password <password>
+dpro-hl transfer 5 --to perp --account main
 dpro-hl orders
 dpro-hl positions
 ```
@@ -267,7 +273,7 @@ Behavior:
 | Path | Description |
 |------|-------------|
 | `~/.config/dpro-hl/config.json` | Account list, default account, network setting |
-| `~/.config/dpro-hl/keys.enc` | AES-encrypted agent private keys |
+| `~/.config/dpro-hl/keys.enc` | AES-encrypted signing keys (agent + master) |
 | `~/.config/dpro-hl/upgrade-state.json` | Auto-upgrade state and warning dedupe metadata |
 
 Private keys are never stored in plain text. A master password is required to encrypt and decrypt keys.
@@ -293,6 +299,7 @@ scripts/
 │   ├── market.mjs          # Market data commands
 │   ├── account.mjs         # Account management and account reads
 │   ├── trade.mjs           # Order execution and risk controls
+│   ├── transfer.mjs        # Spot/perp transfer (master-wallet signing)
 │   └── onchain.mjs         # Onchain read commands
 └── tests/                  # Unit tests (node:test)
 ```

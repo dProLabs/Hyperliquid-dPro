@@ -80,10 +80,14 @@ function extractFlags(tokens) {
 // --- Command routing tables ---
 
 const MARKET_ACTIONS = new Set(['quote', 'book', 'candles', 'movers', 'overview']);
-const ACCOUNT_ACTIONS = new Set(['add-readonly', 'add-api', 'ls', 'remove', 'set-default', 'clear-password-cache', 'positions', 'balances', 'orders', 'fills', 'portfolio']);
+const ACCOUNT_ACTIONS = new Set([
+  'add-readonly', 'add-api', 'add-master', 'update-master', 'remove-master',
+  'ls', 'remove', 'set-default', 'clear-password-cache', 'positions', 'balances', 'orders', 'fills', 'portfolio',
+]);
 const TRADE_ACTIONS = new Set(['limit', 'market', 'cancel', 'cancel-all', 'cancel-by-cloid', 'set-leverage', 'topup-isolated', 'modify']);
 const TRADE_NAMESPACES = new Set(['spot', 'perp', 'hip3']);
 const ONCHAIN_ACTIONS = new Set(['ping', 'health', 'mids', 'spot-meta', 'perps-meta', 'spot-holders', 'spot-holder-counts', 'perp-holders', 'liquidation-map', 'leaderboard']);
+const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
 // --- Structured command parsing ---
 
@@ -104,6 +108,15 @@ function parseStructured(tokens, flags, raw) {
     return { domain: 'trade', action: 'approve-builder', target: null, args: {}, flags, raw };
   }
 
+  // "transfer <usd> --to perp|spot"
+  if (first === 'transfer') {
+    const usd = tokens[1];
+    if (!usd) {
+      throw inputError('Usage: dpro-hl transfer <usd> [--to perp|spot]');
+    }
+    return { domain: 'transfer', action: 'transfer', target: null, args: { usd }, flags, raw };
+  }
+
   // Market actions: "quote BTC", "book ETH", etc.
   if (MARKET_ACTIONS.has(first)) {
     return {
@@ -121,6 +134,17 @@ function parseStructured(tokens, flags, raw) {
     const action = tokens[1]?.toLowerCase();
     if (!action || !ACCOUNT_ACTIONS.has(action)) {
       throw unknownCommand(`Unknown account action: ${action || '(none)'}. Available: ${[...ACCOUNT_ACTIONS].join(', ')}`);
+    }
+
+    if (action === 'add-master' || action === 'update-master') {
+      if (!tokens[2] || !ETH_ADDRESS_RE.test(tokens[2]) || !tokens[3]) {
+        throw inputError(`Usage: dpro-hl account ${action} <masterAddress> <masterPrivKey>  --password <password>`);
+      }
+    }
+    if (action === 'remove-master') {
+      if (!tokens[2] || !ETH_ADDRESS_RE.test(tokens[2])) {
+        throw inputError('Usage: dpro-hl account remove-master <masterAddress>  --password <password>');
+      }
     }
     return {
       domain: 'account',
@@ -174,7 +198,7 @@ function parseStructured(tokens, flags, raw) {
     };
   }
 
-  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, onchain, account, spot order, perp order, hip3 order, positions, balances, orders, fills`);
+  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, transfer, onchain, account, spot order, perp order, hip3 order, positions, balances, orders, fills`);
 }
 
 function parseTradeAction(marketType, tokens, flags, raw) {

@@ -78,12 +78,49 @@ describe('formatResult', () => {
     const out = formatResult(result);
     assert.ok(out.includes('Accounts (0)'));
     assert.ok(out.includes('Alias'));
-    assert.ok(out.includes('Address'));
+    assert.ok(out.includes('MasterAddress'));
+    assert.ok(out.includes('AgentAddress'));
+    assert.ok(out.includes('MasterKey'));
     assert.ok(out.includes('No accounts configured.'));
     assert.ok(out.includes('1. Connect wallet and sign in to Hyperliquid: https://app.hyperliquid.xyz/join/DPRO1'));
     assert.ok(out.includes('2. Create an API wallet at https://app.hyperliquid.xyz/API'));
     assert.ok(out.includes('3. Run: dpro-hl account add-api <masterAddress> <agentPrivKey> [alias]  --password <password>'));
     assert.ok(out.includes('4. Optional read-only mode: dpro-hl account add-readonly <address> [alias]'));
+  });
+
+  it('formats account-ls with master and agent addresses', () => {
+    const result = {
+      ok: true,
+      type: 'account-ls',
+      data: {
+        accounts: [
+          {
+            alias: 'api-main',
+            masterAddress: '0x1234567890abcdef1234567890abcdef12345678',
+            agentAddress: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+            mode: 'api',
+            hasMasterKey: true,
+            isDefault: true,
+          },
+          {
+            alias: 'ro',
+            masterAddress: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            agentAddress: null,
+            mode: 'readonly',
+            hasMasterKey: false,
+            isDefault: false,
+          },
+        ],
+      },
+    };
+    const out = formatResult(result);
+    assert.ok(out.includes('MasterAddress'));
+    assert.ok(out.includes('AgentAddress'));
+    assert.ok(out.includes('api-main'));
+    assert.ok(out.includes('0x12345678...'));
+    assert.ok(out.includes('0xabcdefab...'));
+    assert.ok(out.includes('ro'));
+    assert.ok(out.includes('—'));
   });
 
   it('formats order result - resting', () => {
@@ -113,5 +150,28 @@ describe('formatResult', () => {
     };
     const out = formatResult(result);
     assert.ok(out.includes('Test warning'));
+  });
+
+  it('formats transfer result', () => {
+    const result = {
+      ok: true,
+      type: 'transfer_result',
+      data: { usd: 10, from: 'spot', to: 'perp' },
+    };
+    const out = formatResult(result);
+    assert.ok(out.includes('Transferred'));
+    assert.ok(out.includes('spot'));
+    assert.ok(out.includes('perp'));
+  });
+
+  it('formats master-key-added result with masterAddress', () => {
+    const result = {
+      ok: true,
+      type: 'master-key-added',
+      data: { masterAddress: '0x1234567890abcdef1234567890abcdef12345678' },
+    };
+    const out = formatResult(result);
+    assert.ok(out.includes('Master key added'));
+    assert.ok(out.includes('0x1234567890abcdef1234567890abcdef12345678'));
   });
 });

@@ -114,8 +114,57 @@ async function addApi(parsed, ctx) {
   };
 }
 
+function ensurePassword(ctx) {
+  if (ctx?.password) deps.store.setMasterPassword(ctx.password);
+  if (!deps.store.getMasterPassword()) {
+    throw deps.inputError('Master password required. Pass via runtimeContext.password or set it first.');
+  }
+}
+
+async function addMaster(parsed, ctx) {
+  const masterAddress = parsed.target;
+  const masterPrivateKey = parsed.args?.rest?.[0];
+  if (!masterAddress || !masterPrivateKey) {
+    throw deps.inputError('Usage: dpro-hl account add-master <masterAddress> <masterPrivKey>  --password <password>');
+  }
+  deps.assertAddress(masterAddress, 'master address');
+  const cleanKey = deps.assertPrivateKey(masterPrivateKey);
+  ensurePassword(ctx);
+  deps.store.addMasterPrivateKeyByAddress(masterAddress, cleanKey);
+  return { ok: true, type: 'master-key-added', data: { masterAddress } };
+}
+
+async function updateMaster(parsed, ctx) {
+  const masterAddress = parsed.target;
+  const masterPrivateKey = parsed.args?.rest?.[0];
+  if (!masterAddress || !masterPrivateKey) {
+    throw deps.inputError('Usage: dpro-hl account update-master <masterAddress> <masterPrivKey>  --password <password>');
+  }
+  deps.assertAddress(masterAddress, 'master address');
+  const cleanKey = deps.assertPrivateKey(masterPrivateKey);
+  ensurePassword(ctx);
+  deps.store.updateMasterPrivateKeyByAddress(masterAddress, cleanKey);
+  return { ok: true, type: 'master-key-updated', data: { masterAddress } };
+}
+
+async function removeMaster(parsed, ctx) {
+  const masterAddress = parsed.target;
+  if (!masterAddress) {
+    throw deps.inputError('Usage: dpro-hl account remove-master <masterAddress>  --password <password>');
+  }
+  deps.assertAddress(masterAddress, 'master address');
+  ensurePassword(ctx);
+  deps.store.removeMasterPrivateKeyByAddress(masterAddress);
+  return { ok: true, type: 'master-key-removed', data: { masterAddress } };
+}
+
 async function ls() {
-  const accounts = deps.store.listAccounts();
+  const accounts = deps.store.listAccounts().map((a) => ({
+    ...a,
+    agentAddress: a.agentAddress || null,
+    hasAgentKey: typeof a.hasAgentKey === 'boolean' ? a.hasAgentKey : a.mode === 'api',
+    hasMasterKey: deps.store.hasMasterPrivateKeyByAddress(a.masterAddress),
+  }));
   return { ok: true, type: 'account-ls', data: { accounts } };
 }
 
@@ -266,7 +315,8 @@ export function __resetAccountDepsForTest() {
 }
 
 export default {
-  addReadonly, addApi, ls, remove, setDefault,
+  addReadonly, addApi, addMaster, updateMaster, removeMaster,
+  ls, remove, setDefault,
   clearPasswordCache,
   positions, balances, orders, fills, portfolio,
 };

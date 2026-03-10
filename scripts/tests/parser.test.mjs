@@ -89,6 +89,35 @@ describe('parser', () => {
       assert.equal(r.action, 'clear-password-cache');
     });
 
+    it('parses account add-master', () => {
+      const r = parseInput('dpro-hl account add-master 0x1234567890abcdef1234567890abcdef12345678 0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd');
+      assert.equal(r.domain, 'account');
+      assert.equal(r.action, 'add-master');
+      assert.equal(r.target, '0x1234567890abcdef1234567890abcdef12345678');
+      assert.equal(r.args.rest[0], '0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd');
+    });
+
+    it('parses account update-master', () => {
+      const r = parseInput('dpro-hl account update-master 0x1234567890abcdef1234567890abcdef12345678 0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd');
+      assert.equal(r.domain, 'account');
+      assert.equal(r.action, 'update-master');
+      assert.equal(r.target, '0x1234567890abcdef1234567890abcdef12345678');
+    });
+
+    it('parses account remove-master', () => {
+      const r = parseInput('dpro-hl account remove-master 0x1234567890abcdef1234567890abcdef12345678');
+      assert.equal(r.domain, 'account');
+      assert.equal(r.action, 'remove-master');
+      assert.equal(r.target, '0x1234567890abcdef1234567890abcdef12345678');
+    });
+
+    it('rejects old add-master syntax', () => {
+      assert.throws(
+        () => parseInput('dpro-hl account add-master 0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd main'),
+        /Usage: dpro-hl account add-master/i,
+      );
+    });
+
     it('parses positions shortcut', () => {
       const r = parseInput('dpro-hl positions main');
       assert.equal(r.domain, 'account');
@@ -174,6 +203,27 @@ describe('parser', () => {
 
     it('rejects legacy order command', () => {
       assert.throws(() => parseInput('dpro-hl order limit buy 0.01 BTC 50000'), /no longer supported/i);
+    });
+  });
+
+  describe('transfer commands', () => {
+    it('parses transfer with default direction', () => {
+      const r = parseInput('dpro-hl transfer 10');
+      assert.equal(r.domain, 'transfer');
+      assert.equal(r.action, 'transfer');
+      assert.equal(r.args.usd, '10');
+    });
+
+    it('parses transfer with --to spot', () => {
+      const r = parseInput('dpro-hl transfer 10 --to spot');
+      assert.equal(r.domain, 'transfer');
+      assert.equal(r.action, 'transfer');
+      assert.equal(r.args.usd, '10');
+      assert.equal(r.flags.to, 'spot');
+    });
+
+    it('rejects transfer without amount', () => {
+      assert.throws(() => parseInput('dpro-hl transfer'), /Usage: dpro-hl transfer/i);
     });
   });
 

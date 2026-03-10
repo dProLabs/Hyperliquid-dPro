@@ -30,16 +30,18 @@ export function __shouldClearPasswordCacheForTest(err) {
 
 async function ensureHandlers() {
   if (initialized) return;
-  const [market, account, trade, onchain] = await Promise.all([
+  const [market, account, trade, transfer, onchain] = await Promise.all([
     import('./commands/market.mjs'),
     import('./commands/account.mjs'),
     import('./commands/trade.mjs'),
+    import('./commands/transfer.mjs'),
     import('./commands/onchain.mjs'),
   ]);
   registerHandlers({
     market: market.default || market,
     account: account.default || account,
     trade: trade.default || trade,
+    transfer: transfer.default || transfer,
     onchain: onchain.default || onchain,
   });
   initialized = true;

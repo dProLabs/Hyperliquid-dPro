@@ -104,9 +104,24 @@ Add read-only account.
 
 Add API account for write actions.
 
+### `dpro-hl account add-master <masterAddress> <masterPrivKey>  --password <password>`
+
+Add master private key mapping for a master address. Required for `dpro-hl transfer ...`.
+
+### `dpro-hl account update-master <masterAddress> <masterPrivKey>  --password <password>`
+
+Rotate/update stored master private key mapping for a master address.
+
+### `dpro-hl account remove-master <masterAddress>  --password <password>`
+
+Remove stored master private key mapping for a master address.
+
 ### `dpro-hl account ls`
 
 List configured accounts.
+Output columns include `MasterAddress` and `AgentAddress`:
+- API accounts show both addresses.
+- Read-only accounts show `AgentAddress` as `—`.
 
 ### `dpro-hl account remove <alias>`
 
@@ -139,6 +154,32 @@ dpro-hl fills main --limit 50
 
 ---
 
+## Transfer Commands
+
+### `dpro-hl transfer <usd> [--to perp|spot]`
+
+Transfer funds between spot and perp balance buckets.
+
+**Options:**
+| Option | Description |
+|---|---|
+| `--to perp\|spot` | Destination bucket. Default: `perp` |
+
+**Rules:**
+- `transfer` is a top-level command (not under `spot/perp/hip3 order ...`).
+- `transfer` uses the stored **master wallet** private key for signing.
+- If master key mapping for the selected account's `masterAddress` is missing, command fails with migration hint.
+- API wallet alias and master key alias do not need to be the same; mapping is by `masterAddress`.
+
+**Examples:**
+```bash
+dpro-hl transfer 10
+dpro-hl transfer 25 --to spot
+dpro-hl transfer 5 --to perp --account main
+```
+
+---
+
 ## Trade Commands
 
 Trading is split into three explicit namespaces: **spot**, **perp**, **hip3**.
@@ -149,6 +190,10 @@ Use explicit trade namespaces for all write actions:
 - `dpro-hl hip3 ...`
 
 Do not rely on implicit market-type inference for live writes.
+
+Signer policy for write actions:
+- `spot/perp/hip3 order ...` -> API wallet signing
+- `transfer ...` -> master wallet signing
 
 ### Spot Commands
 

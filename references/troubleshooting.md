@@ -33,6 +33,7 @@ For write failures, never blind-retry unless you have verified that the original
 | `ASSET_NOT_FOUND` | symbol resolution | run `dpro-hl markets ls` and use exact coin | no, until corrected |
 | `Master password required` | secret / decrypt | provide password through supported path | no, until provided |
 | `PRIVATE_KEY_MISSING` | account mode | switch to API account | no, until corrected |
+| `PRIVATE_KEY_MISSING ... missing master key` | transfer signer | add master key mapping for the account masterAddress | no, until corrected |
 | `No mid price available` | market data / symbol mismatch | verify exact symbol | no, until corrected |
 | `Order has invalid price` | pricing / tick / normalization | use valid tick price or bounded market path | only after correction |
 | `Cannot set leverage on spot markets` | market-type mismatch | switch to `perp` or supported `hip3` perp | no, until corrected |
@@ -147,6 +148,26 @@ Use this class when the request could not reliably reach the upstream service or
 **Retry guidance**
 - do not retry on a read-only account
 - safe to retry only after API account readiness is confirmed
+
+---
+
+## `Error [PRIVATE_KEY_MISSING] ... missing master key` on `dpro-hl transfer`
+
+**Likely cause**
+- transfer uses master-wallet signing
+- selected account's `masterAddress` has no stored master key mapping
+
+**Direct fix**
+1. Check accounts:
+   - `dpro-hl account ls`
+2. Add master key mapping for the master address:
+   - `dpro-hl account add-master <masterAddress> <masterPrivKey>  --password <password>`
+3. Retry transfer:
+   - `dpro-hl transfer <usd> [--to perp|spot] [--account <alias>]`
+
+**Retry guidance**
+- do not retry transfer until master key is configured
+- after adding master key, retry is safe
 
 ---
 

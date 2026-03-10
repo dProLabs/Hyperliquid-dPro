@@ -7,6 +7,7 @@ import {
   updateLeverage,
   updateIsolatedMargin,
   approveBuilderFee,
+  usdClassTransfer,
   __setExchangeClientFactoryForTest,
   __resetExchangeClientFactoryForTest,
 } from '../clients/exchange-client.mjs';
@@ -37,6 +38,10 @@ function createFactoryProbe(methodImpls = {}) {
     approveBuilderFee: async (params) => {
       calls.push({ method: 'approveBuilderFee', params });
       return methodImpls.approveBuilderFee ? methodImpls.approveBuilderFee(params) : { ok: true };
+    },
+    usdClassTransfer: async (params) => {
+      calls.push({ method: 'usdClassTransfer', params });
+      return methodImpls.usdClassTransfer ? methodImpls.usdClassTransfer(params) : { status: 'ok' };
     },
   };
 
@@ -141,5 +146,16 @@ describe('exchange-client SDK wrapper', () => {
       maxFeeRate: '0.01%',
       builder: '0x1234567890123456789012345678901234567890',
     });
+  });
+
+  it('maps usdClassTransfer to exchange.usdClassTransfer', async () => {
+    const probe = createFactoryProbe();
+    __setExchangeClientFactoryForTest(probe.factory);
+
+    await usdClassTransfer('1', true, '0xabc', '0xuser', { isTestnet: true });
+
+    assert.equal(probe.factoryCalls[0].opts.isTestnet, true);
+    assert.equal(probe.calls[0].method, 'usdClassTransfer');
+    assert.deepEqual(probe.calls[0].params, { amount: '1', toPerp: true });
   });
 });

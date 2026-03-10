@@ -1,18 +1,19 @@
 ---
 name: dpro-hl
-description: "Use this skill for Hyperliquid and dPro workflows: market/account reads, account readiness checks, explicitly confirmed live trading, and dPro onchain analytics. Supports spot, perp, and HIP-3 assets with strict symbol matching, explicit market namespaces for trading, account resolution, preflight checks, and post-submit verification."
+description: "Use this skill for Hyperliquid and dPro workflows: market/account reads, account readiness checks, spot-perp fund transfers, explicitly confirmed live trading, and dPro onchain analytics. Supports spot, perp, and HIP-3 assets with strict symbol matching, explicit market namespaces for trading, account resolution, preflight checks, and post-submit verification."
 ---
 
 # dpro-hl
 
 Use this skill for Hyperliquid-only workflows backed by the dPro command surface and dPro read-only onchain API.
 
-This skill supports four domains inside one skill:
+This skill supports five domains inside one skill:
 
 1. market reads
 2. account reads and account readiness checks
-3. live trading writes
-4. dPro onchain read-only analytics
+3. fund transfers between spot and perp balance buckets
+4. live trading writes
+5. dPro onchain read-only analytics
 
 This file defines the **routing policy**, **execution policy**, and **safety policy**.
 
@@ -31,6 +32,7 @@ Use this skill when the user wants to do any of the following on Hyperliquid:
 
 - check quotes, order books, candles, movers, overview, or supported markets
 - inspect balances, positions, orders, fills, or portfolio state
+- transfer funds between spot and perp balance buckets
 - place, cancel, or manage spot / perp / HIP-3 trades
 - adjust leverage or isolated margin on perp-style instruments
 - query dPro onchain analytics such as mids, holders, liquidation maps, or leaderboard
@@ -109,6 +111,7 @@ Families:
 - market reads
 - account management
 - account state queries
+- fund transfers
 - spot trade writes
 - perp trade writes
 - hip3 trade writes
@@ -151,7 +154,16 @@ Examples:
 - `dpro-hl balances main`
 - `dpro-hl fills main --limit 20`
 
-### 3. Trade write branch
+### 3. Transfer branch
+Use for:
+- top-level `transfer` requests between spot and perp buckets
+
+Examples:
+- `dpro-hl transfer 10`
+- `dpro-hl transfer 25 --to spot`
+- `dpro-hl transfer 5 --to perp --account main`
+
+### 4. Trade write branch
 Use for:
 - any `spot order ...`
 - any `perp order ...`
@@ -164,7 +176,7 @@ Examples:
 - `dpro-hl hip3 order limit buy 1 xyz:NVDA 120`
 - `dpro-hl perp order set-leverage BTC 5 --cross`
 
-### 4. Onchain read branch
+### 5. Onchain read branch
 Use for:
 - any `dpro-hl onchain ...` request
 
@@ -266,11 +278,20 @@ Read operations may use:
 - API accounts
 - explicit addresses where supported
 
+For `dpro-hl account ls` interpretation:
+- treat `MasterAddress` as the master account address and `AgentAddress` as the API sub-account address
+- if `MasterKey=no`, explain this as missing master-key mapping for the existing account, not a missing "master account" entry
+- if guiding the user to fix `MasterKey=no` with `dpro-hl account add-master ...`, explicitly say this flow needs `master-wallet password` first
+- request password input through `password=<YOUR_PASSWORD>` or `--password <YOUR_PASSWORD>` before constructing the `add-master` command
+
 ### Write path
 Write operations require:
 - an API account
 - password availability
 - an unambiguous target account
+
+Some write operations also require extra signer state:
+- `dpro-hl transfer ...` requires a stored master key mapping for the selected account's `masterAddress`
 
 If account state is unknown before a write, check `dpro-hl account ls` first.
 
@@ -281,8 +302,14 @@ If account state is unknown before a write, check `dpro-hl account ls` first.
 If the runtime supports `runtimeContext.password`, prefer that.
 Otherwise use the canonical secure command path supported by the implementation.
 
+Credential split rules:
+- `api-wallet password` protects API-wallet-related encrypted material used for `spot/perp/hip3 order ...` flows
+- `master-wallet password` protects master-wallet-related encrypted material used for `transfer ...` and `account add-master|update-master|remove-master ...` flows
+- `api-wallet password` and `master-wallet password` are separate secrets and must not be assumed interchangeable
+- cached availability of one password must not be treated as availability of the other
+
 Password session cache is enabled by default for this skill runtime:
-- when user provides password once, later commands in the same agent session may reuse cached password across new node processes
+- when user provides a specific password once, later commands in the same agent session may reuse that same credential class across new node processes
 - do not repeatedly ask for password if a write can proceed with cached credentials
 - users may clear cache explicitly with `dpro-hl account clear-password-cache`
 
@@ -290,8 +317,19 @@ When password is missing for a write/decrypt flow, explicitly ask the user to pr
 - `password=<YOUR_PASSWORD>` (chat/runtime input form)
 - `--password <YOUR_PASSWORD>` (command form when supported)
 
-Use a direct prompt style, for example:
-- `This action needs your master password. Please provide: password=<YOUR_PASSWORD>.`
+Use direct prompt styles that name the credential class:
+- order / API-wallet flow: `This action needs your api-wallet password. Please provide: password=<YOUR_PASSWORD>.`
+- transfer / master-wallet flow: `This transfer needs your master-wallet password. Please provide: password=<YOUR_PASSWORD>.`
+- master-key management flow: `This action needs your master-wallet password. Please provide: password=<YOUR_PASSWORD>.`
+
+Never assume reuse across credential classes:
+- if an order flow succeeded with an `api-wallet password`, still ask for `master-wallet password` before `transfer ...` unless master-password availability is explicitly known
+- if a transfer flow succeeded with a `master-wallet password`, still ask for `api-wallet password` before order/decrypt flows unless API-password availability is explicitly known
+
+For master-key management commands:
+- treat `dpro-hl account add-master ...`, `update-master ...`, and `remove-master ...` as master-wallet secret-management flows
+- never skip the password prompt just because the current context has no explicit password input UI
+- never suggest "try `add-master` directly" before resolving `master-wallet password` input
 
 Never:
 - print private keys
@@ -331,6 +369,8 @@ If an API account already exists:
 All write actions are high risk.
 
 This includes:
+- transfers between spot and perp buckets
+- adding, updating, or removing master-key mappings
 - placing orders
 - cancelling orders
 - cancelling all orders
@@ -343,12 +383,18 @@ For every write, execute the following state machine.
 
 ### Step 1: classify the write
 Identify:
+- transfer
+- master-key management
 - spot order
 - perp order
 - hip3 order
 - approve-builder
 
 Then identify the exact sub-action:
+- transfer direction (`--to perp|spot`)
+- master-key add
+- master-key update
+- master-key remove
 - limit
 - market
 - cancel
@@ -361,15 +407,19 @@ Then identify the exact sub-action:
 Before any write:
 - resolve exact account
 - verify the account is API-capable
-- confirm password is available
-- resolve exact symbol
-- confirm market namespace is correct
+- for `transfer`, confirm `master-wallet password` availability
+- for `transfer`, verify master-key mapping exists for the account `masterAddress`
+- for master-key management, confirm `master-wallet password` availability before suggesting or executing `add-master`, `update-master`, or `remove-master`
+- for trading writes, confirm `api-wallet password` availability
+- for trading writes, resolve exact symbol
+- for trading writes, confirm market namespace is correct
 
 ### Step 3: run preflight checks
 At minimum check:
-- symbol exactness
-- side exactness
-- size completeness
+- positive amount / size completeness
+- for `transfer`, destination bucket exactness (`perp` or `spot`)
+- for trading writes, symbol exactness
+- for trading writes, side exactness
 - price completeness for limit orders
 - slippage completeness for market orders when applicable
 - market compatibility for leverage and isolated actions
@@ -381,22 +431,28 @@ For perp / HIP-3 order writes:
 ### Step 4: summarize intended effect
 Before submission, summarize:
 - account
-- market namespace
+- for `transfer`, selected account or alias, from bucket, to bucket, and USD amount
+- for trading writes, market namespace
 - action
-- exact symbol
-- side
-- size
+- exact symbol when applicable
+- side when applicable
+- size when applicable
 - price or slippage
 - relevant mode flags
 - whether the action has persistent account effect
 
 ### Step 5: require explicit confirmation for risky actions
 Require explicit confirmation before proceeding when supported by the runtime, especially for:
+- all spot<->perp transfers
 - market orders
 - cancel-all
 - high-notional orders
 - leverage changes
 - builder approval
+
+For `transfer ...`:
+- do not execute until the user explicitly confirms the direction and USD amount after the summary is shown
+- this confirmation is mandatory for both `spot -> perp` and `perp -> spot` transfers
 
 ### Step 6: submit using canonical command semantics
 Use the canonical command model defined in this file and the synchronized command reference.
@@ -416,6 +472,50 @@ If the result is uncertain because of timeout or network failure:
 ---
 
 ## Special write rules
+
+### Master-key management
+Use:
+- `dpro-hl account add-master <masterAddress> <masterPrivKey> --password <password>`
+- `dpro-hl account update-master <masterAddress> <masterPrivKey> --password <password>`
+- `dpro-hl account remove-master <masterAddress> --password <password>`
+
+Rules:
+- these commands require `master-wallet password`
+- when the user needs to fix `MasterKey=no` or a `missing master key` error, ask for password input before giving or executing the repair command
+- do not give only the command and omit the password requirement
+- do not say "there is no password prompt here, so try `add-master` directly"
+- if password is not yet available, first request `password=<YOUR_PASSWORD>` or `--password <YOUR_PASSWORD>`
+- only after password availability is clear should the agent continue with `add-master`, `update-master`, or `remove-master`
+
+Master-key management example:
+- `account ls` shows `MasterKey=no` for an API account
+- explain that the account exists and only the master-key mapping is missing
+- ask for `master-wallet password`
+- then guide the user to `dpro-hl account add-master <masterAddress> <masterPrivKey> --password <password>`
+
+### Transfers
+Use `dpro-hl transfer <usd> [--to perp|spot]`.
+
+Rules:
+- `transfer` is a top-level command, not a `spot/perp/hip3 order` subcommand
+- default destination is `perp` when `--to` is omitted
+- transfer signing uses the stored master wallet private key, not the API wallet private key
+- transfer requires `master-wallet password`, not `api-wallet password`
+- `master-wallet password` and `api-wallet password` must be treated as independent credentials
+- the selected account must still be an API-capable account; read-only accounts are invalid for transfer
+- resolve master key by `masterAddress`, not by alias
+- never rewrite invalid `--to` values; reject anything other than `perp` or `spot`
+- before any `spot -> perp` or `perp -> spot` transfer, confirmation of both direction and USD amount is mandatory
+- before execution, explicitly restate and confirm `from`, `to`, and USD amount
+- do not infer approval from a previously confirmed trade, a previous password entry, or the default `--to perp`
+- if `--to` was omitted, normalize to the default destination only for command construction, then explicitly present that resolved direction for confirmation before execution
+
+Transfer safety example:
+- user asks to move funds between spot and perp
+- ask for `master-wallet password`
+- summarize selected account, `from`, `to`, and USD amount
+- ask for explicit confirmation of direction and amount
+- execute only after that confirmation
 
 ### Spot orders
 Use `dpro-hl spot order ...`.
