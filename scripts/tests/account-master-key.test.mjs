@@ -23,7 +23,7 @@ describe('account master key commands', () => {
 
     const out = await account.addMaster(
       { target: MASTER, args: { rest: ['0x' + 'a'.repeat(64)] }, flags: {} },
-      { password: 'pwd' },
+      { masterPassword: 'pwd' },
     );
     assert.equal(out.ok, true);
     assert.equal(out.type, 'master-key-added');
@@ -45,7 +45,7 @@ describe('account master key commands', () => {
 
     const out = await account.updateMaster(
       { target: MASTER, args: { rest: ['0x' + 'b'.repeat(64)] }, flags: {} },
-      { password: 'pwd' },
+      { masterPassword: 'pwd' },
     );
     assert.equal(out.type, 'master-key-updated');
     assert.equal(out.data.masterAddress, MASTER);
@@ -65,7 +65,7 @@ describe('account master key commands', () => {
 
     const out = await account.removeMaster(
       { target: MASTER, args: { rest: [] }, flags: {} },
-      { password: 'pwd' },
+      { masterPassword: 'pwd' },
     );
     assert.equal(out.type, 'master-key-removed');
     assert.equal(out.data.masterAddress, MASTER);
@@ -84,7 +84,7 @@ describe('account master key commands', () => {
 
     await assert.rejects(
       () => account.addMaster({ target: MASTER, args: { rest: ['0x' + 'a'.repeat(64)] }, flags: {} }, {}),
-      /Master password required/i,
+      /Master wallet password required/i,
     );
   });
 
@@ -101,7 +101,7 @@ describe('account master key commands', () => {
     });
 
     await assert.rejects(
-      () => account.addMaster({ target: 'not-an-address', args: { rest: ['0x' + 'a'.repeat(64)] }, flags: {} }, { password: 'pwd' }),
+      () => account.addMaster({ target: 'not-an-address', args: { rest: ['0x' + 'a'.repeat(64)] }, flags: {} }, { masterPassword: 'pwd' }),
       /bad address/i,
     );
   });

@@ -138,12 +138,12 @@ function parseStructured(tokens, flags, raw) {
 
     if (action === 'add-master' || action === 'update-master') {
       if (!tokens[2] || !ETH_ADDRESS_RE.test(tokens[2]) || !tokens[3]) {
-        throw inputError(`Usage: dpro-hl account ${action} <masterAddress> <masterPrivKey>  --password <password>`);
+        throw inputError(`Usage: dpro-hl account ${action} <masterAddress> <masterPrivKey>  --master-password <password>`);
       }
     }
     if (action === 'remove-master') {
       if (!tokens[2] || !ETH_ADDRESS_RE.test(tokens[2])) {
-        throw inputError('Usage: dpro-hl account remove-master <masterAddress>  --password <password>');
+        throw inputError('Usage: dpro-hl account remove-master <masterAddress>  --master-password <password>');
       }
     }
     return {
@@ -333,6 +333,9 @@ export function parseInput(rawInput) {
   if (stripped !== null) {
     const tokens = tokenize(stripped);
     const { args, flags } = extractFlags(tokens);
+    if (Object.prototype.hasOwnProperty.call(flags, 'password')) {
+      throw inputError('Legacy password flag is no longer supported. Use `--api-password` or `--master-password`.');
+    }
     return parseStructured(args, flags, raw);
   }
 

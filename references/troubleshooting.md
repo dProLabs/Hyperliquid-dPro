@@ -91,20 +91,20 @@ Use this class when the request could not reliably reach the upstream service or
 - runtime did not receive the password through the supported path
 
 **Direct fix**
-1. Provide the password through `runtimeContext.password` if supported
+1. Provide the password through `runtimeContext.apiPassword` or `runtimeContext.masterPassword` as appropriate
 2. For repeated commands in separate processes, export once and reuse:
-   - `export DPRO_HL_MASTER_PASSWORD=<YOUR_PASSWORD>` (preferred)
-   - or `export MASTER_PASSWORD=<YOUR_PASSWORD>`
+   - `export DPRO_HL_API_PASSWORD=<YOUR_API_PASSWORD>` for API-wallet operations
+   - `export DPRO_HL_MASTER_PASSWORD=<YOUR_MASTER_PASSWORD>` for master-wallet operations
 3. Use built-in session cache by providing password once:
-   - `password=<YOUR_PASSWORD>` or `--password <YOUR_PASSWORD>`
+   - `--api-password <YOUR_PASSWORD>` or `--master-password <YOUR_PASSWORD>`
    - cache is reused across new `node -e` processes until TTL expires
-4. Otherwise use the supported secure command path such as `--password`
+4. Otherwise use the supported secure command path such as `--api-password` / `--master-password`
 5. Re-run the same command once password input is available
 
 **Retry guidance**
 - do not retry until password is provided
 - ask explicitly for password input through supported form:
-  - `password=<YOUR_PASSWORD>` or `--password <YOUR_PASSWORD>`
+  - `--api-password <YOUR_PASSWORD>` or `--master-password <YOUR_PASSWORD>`
 - do not echo or repeat the provided password value in responses
 
 ---
@@ -118,7 +118,7 @@ Use this class when the request could not reliably reach the upstream service or
 
 **Direct fix**
 1. Check cache env vars and remove conflicting overrides
-2. Re-enter password once via `password=<YOUR_PASSWORD>` or `--password <YOUR_PASSWORD>`
+2. Re-enter password once via `--api-password <YOUR_PASSWORD>` or `--master-password <YOUR_PASSWORD>`
 3. If needed, clear stale cache and retry:
    - `dpro-hl account clear-password-cache`
 
@@ -140,7 +140,7 @@ Use this class when the request could not reliably reach the upstream service or
    - `dpro-hl account ls`
 2. If no API account exists, add one through the supported secure path
    - canonical command surface may expose:
-     - `dpro-hl account add-api <masterAddress> <agentPrivKey> [alias]  --password <password>`
+     - `dpro-hl account add-api <masterAddress> <agentPrivKey> [alias]  --api-password <password>`
 3. If needed, set or choose the correct default account:
    - `dpro-hl account set-default <alias>`
 4. Retry the write only after the API account is confirmed
@@ -161,7 +161,7 @@ Use this class when the request could not reliably reach the upstream service or
 1. Check accounts:
    - `dpro-hl account ls`
 2. Add master key mapping for the master address:
-   - `dpro-hl account add-master <masterAddress> <masterPrivKey>  --password <password>`
+   - `dpro-hl account add-master <masterAddress> <masterPrivKey>  --master-password <password>`
 3. Retry transfer:
    - `dpro-hl transfer <usd> [--to perp|spot] [--account <alias>]`
 

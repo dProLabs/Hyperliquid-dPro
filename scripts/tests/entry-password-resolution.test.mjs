@@ -1,59 +1,77 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { __resolvePasswordForTest, __shouldClearPasswordCacheForTest } from '../entry.mjs';
+import { __resolveApiPasswordForTest, __resolveMasterPasswordForTest, __shouldClearPasswordCacheForTest } from '../entry.mjs';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { ErrorCode, SkillError } from '../errors.mjs';
 
 describe('entry password resolution', () => {
-  it('uses --password flag first', () => {
-    const out = __resolvePasswordForTest(
-      { flags: { password: 'flag-pwd' } },
-      { password: 'ctx-pwd' },
-      { DPRO_HL_MASTER_PASSWORD: 'env-pwd', MASTER_PASSWORD: 'env2-pwd', DPRO_HL_PASSWORD_CACHE: '0' },
+  it('resolves api password from --api-password first', () => {
+    const out = __resolveApiPasswordForTest(
+      { flags: { 'api-password': 'flag-api' } },
+      { apiPassword: 'ctx-api' },
+      { DPRO_HL_API_PASSWORD: 'env-api', DPRO_HL_PASSWORD_CACHE: '0' },
     );
-    assert.equal(out, 'flag-pwd');
+    assert.equal(out, 'flag-api');
   });
 
-  it('falls back to runtimeContext.password', () => {
-    const out = __resolvePasswordForTest(
+  it('falls back to runtimeContext.apiPassword', () => {
+    const out = __resolveApiPasswordForTest(
       { flags: {} },
-      { password: 'ctx-pwd' },
-      { DPRO_HL_MASTER_PASSWORD: 'env-pwd', DPRO_HL_PASSWORD_CACHE: '0' },
+      { apiPassword: 'ctx-api' },
+      { DPRO_HL_API_PASSWORD: 'env-api', DPRO_HL_PASSWORD_CACHE: '0' },
     );
-    assert.equal(out, 'ctx-pwd');
+    assert.equal(out, 'ctx-api');
   });
 
-  it('falls back to DPRO_HL_MASTER_PASSWORD then MASTER_PASSWORD', () => {
+  it('resolves master password from --master-password first', () => {
     assert.equal(
-      __resolvePasswordForTest({ flags: {} }, {}, { DPRO_HL_MASTER_PASSWORD: 'env-pwd', MASTER_PASSWORD: 'env2-pwd', DPRO_HL_PASSWORD_CACHE: '0' }),
-      'env-pwd',
+      __resolveMasterPasswordForTest(
+        { flags: { 'master-password': 'flag-master' } },
+        { masterPassword: 'ctx-master' },
+        { DPRO_HL_MASTER_PASSWORD: 'env-master', DPRO_HL_PASSWORD_CACHE: '0' },
+      ),
+      'flag-master',
     );
     assert.equal(
-      __resolvePasswordForTest({ flags: {} }, {}, { MASTER_PASSWORD: 'env2-pwd', DPRO_HL_PASSWORD_CACHE: '0' }),
-      'env2-pwd',
+      __resolveMasterPasswordForTest(
+        { flags: {} },
+        { masterPassword: 'ctx-master' },
+        { DPRO_HL_MASTER_PASSWORD: 'env-master', DPRO_HL_PASSWORD_CACHE: '0' },
+      ),
+      'ctx-master',
     );
   });
 
   it('returns null when nothing is provided', () => {
-    assert.equal(__resolvePasswordForTest({ flags: {} }, {}, { DPRO_HL_PASSWORD_CACHE: '0' }), null);
+    assert.equal(__resolveApiPasswordForTest({ flags: {} }, {}, { DPRO_HL_PASSWORD_CACHE: '0' }), null);
+    assert.equal(__resolveMasterPasswordForTest({ flags: {} }, {}, { DPRO_HL_PASSWORD_CACHE: '0' }), null);
   });
 
   it('falls back to password cache file when explicit/runtime/env are empty', () => {
     const dir = mkdtempSync(join(tmpdir(), 'dpro-hl-entry-pwd-'));
     const cacheFile = join(dir, 'password-session.json');
     writeFileSync(cacheFile, JSON.stringify({
-      password: 'cached-pwd',
-      savedAt: Date.now() - 1000,
-      expiresAt: Date.now() + 10_000,
+      apiPassword: 'cached-api',
+      masterPassword: 'cached-master',
+      apiSavedAt: Date.now() - 1000,
+      masterSavedAt: Date.now() - 1000,
+      apiExpiresAt: Date.now() + 10_000,
+      masterExpiresAt: Date.now() + 10_000,
     }), 'utf8');
-    const out = __resolvePasswordForTest(
+    const apiOut = __resolveApiPasswordForTest(
       { flags: {} },
       {},
       { DPRO_HL_PASSWORD_CACHE_FILE: cacheFile, DPRO_HL_PASSWORD_CACHE: '1' },
     );
-    assert.equal(out, 'cached-pwd');
+    const masterOut = __resolveMasterPasswordForTest(
+      { flags: {} },
+      {},
+      { DPRO_HL_PASSWORD_CACHE_FILE: cacheFile, DPRO_HL_PASSWORD_CACHE: '1' },
+    );
+    assert.equal(apiOut, 'cached-api');
+    assert.equal(masterOut, 'cached-master');
   });
 });
 

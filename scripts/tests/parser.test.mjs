@@ -70,6 +70,13 @@ describe('parser', () => {
   });
 
   describe('account commands', () => {
+    it('rejects deprecated --password flag', () => {
+      assert.throws(
+        () => parseInput('dpro-hl account ls --password 123'),
+        /no longer supported/i,
+      );
+    });
+
     it('parses account ls', () => {
       const r = parseInput('dpro-hl account ls');
       assert.equal(r.domain, 'account');

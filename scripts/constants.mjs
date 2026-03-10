@@ -53,6 +53,8 @@ export const CONFIG_DIR = '.config/dpro-hl';
 export const CONFIG_FILE = 'config.json';
 export const UPGRADE_STATE_FILE = 'upgrade-state.json';
 export const KEYS_FILE = 'keys.enc';
+export const API_KEYS_FILE = 'api-keys.enc';
+export const MASTER_KEYS_FILE = 'master-keys.enc';
 export const PASSWORD_CACHE_FILE = 'password-session.json';
 export const DEFAULT_PASSWORD_CACHE_TTL_SEC = 6 * 60 * 60; // 6 hours
 
