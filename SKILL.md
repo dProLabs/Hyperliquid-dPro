@@ -1,6 +1,6 @@
 ---
 name: dpro-hl
-description: Use this skill for Hyperliquid and dPro workflows: market/account reads, account readiness checks, explicitly confirmed live trading, and dPro onchain analytics. Supports spot, perp, and HIP-3 assets with strict symbol matching, explicit market namespaces for trading, account resolution, preflight checks, and post-submit verification.
+description: "Use this skill for Hyperliquid and dPro workflows: market/account reads, account readiness checks, explicitly confirmed live trading, and dPro onchain analytics. Supports spot, perp, and HIP-3 assets with strict symbol matching, explicit market namespaces for trading, account resolution, preflight checks, and post-submit verification."
 ---
 
 # dpro-hl
