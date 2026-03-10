@@ -89,75 +89,31 @@ Accepted user input forms include:
 ### Execution bridge
 Use runtime invocation first. If unavailable, execute via Node entrypoint:
 
+```bash
 node --input-type=module -e "
   import { runHyperliquidSkill } from './scripts/entry.mjs';
   console.log(await runHyperliquidSkill('dpro-hl quote BTC'));
 "
+```
+
 ---
 
 ## Canonical command families
 
-### Market read commands
-- `dpro-hl quote <coin>`
-- `dpro-hl book <coin> [--levels N]`
-- `dpro-hl candles <coin> --interval <iv> [--last N]`
-- `dpro-hl movers [--top N] [--side gainers|losers]`
-- `dpro-hl overview [--top N]`
-- `dpro-hl markets ls`
+This section defines command taxonomy only, not full syntax.
 
-### Account management commands
-- `dpro-hl account add-readonly <address> [alias]`
-- `dpro-hl account add-api <masterAddress> <agentPrivKey> [alias]  --password <password>`
-- `dpro-hl account ls`
-- `dpro-hl account remove <alias>`
-- `dpro-hl account set-default <alias>`
+For canonical command forms, flags, and exact argument shapes, always use:
+- `references/commands.md`
 
-### Account query commands
-- `dpro-hl positions [alias|address]`
-- `dpro-hl balances [alias|address]`
-- `dpro-hl orders [alias|address]`
-- `dpro-hl fills [alias|address] [--limit N]`
-- `dpro-hl portfolio [alias|address]`
-
-### Spot trade commands
-- `dpro-hl spot order limit buy|sell <size> <coin> <price> [--tif Gtc|Ioc|Alo]`
-- `dpro-hl spot order market buy|sell <size> <coin> [--slippage N]`
-- `dpro-hl spot order cancel <oid>`
-- `dpro-hl spot order cancel-all`
-- `dpro-hl spot order cancel-by-cloid <coin> <cloid>`
-
-### Perp trade commands
-- `dpro-hl perp order limit buy|sell <size> <coin> <price> [--tif Gtc|Ioc|Alo] [--reduce-only]`
-- `dpro-hl perp order market buy|sell <size> <coin> [--slippage N] [--reduce-only]`
-- `dpro-hl perp order cancel <oid>`
-- `dpro-hl perp order cancel-all`
-- `dpro-hl perp order cancel-by-cloid <coin> <cloid>`
-- `dpro-hl perp order set-leverage <coin> <leverage> [--cross|--isolated]`
-- `dpro-hl perp order topup-isolated <coin> <usd>`
-
-### HIP-3 trade commands
-- `dpro-hl hip3 order limit buy|sell <size> <coin> <price> [--tif Gtc|Ioc|Alo] [--reduce-only]`
-- `dpro-hl hip3 order market buy|sell <size> <coin> [--slippage N] [--reduce-only]`
-- `dpro-hl hip3 order cancel <oid>`
-- `dpro-hl hip3 order cancel-all`
-- `dpro-hl hip3 order cancel-by-cloid <coin> <cloid>`
-- `dpro-hl hip3 order set-leverage <coin> <leverage> [--cross|--isolated]`
-- `dpro-hl hip3 order topup-isolated <coin> <usd>`
-
-### Builder approval command
-- `dpro-hl approve-builder`
-
-### Onchain read commands
-- `dpro-hl onchain ping`
-- `dpro-hl onchain health`
-- `dpro-hl onchain mids`
-- `dpro-hl onchain spot-meta`
-- `dpro-hl onchain perps-meta`
-- `dpro-hl onchain spot-holders <coin> [--page N] [--limit N]`
-- `dpro-hl onchain spot-holder-counts`
-- `dpro-hl onchain perp-holders <coin> [--sortBy field] [--order asc|desc] [--page N] [--limit N]`
-- `dpro-hl onchain liquidation-map <coin>`
-- `dpro-hl onchain leaderboard [--page N] [--limit N] [--sort field] [--order asc|desc]`
+Families:
+- market reads
+- account management
+- account state queries
+- spot trade writes
+- perp trade writes
+- hip3 trade writes
+- builder approval
+- onchain reads
 
 ---
 
@@ -218,11 +174,6 @@ Examples:
 - `dpro-hl onchain spot-holders PURR --limit 5`
 - `dpro-hl onchain leaderboard --limit 10`
 
----
-
-Here is a clean merged English-only version that combines both sections without duplication:
-
-```markdown
 ## Market-type policy
 
 Trading must use explicit market namespaces.

@@ -28,7 +28,7 @@ Typical pattern:
 
 ---
 
-## Example 1: First-time account setup and readiness check
+## Setup workflow
 
 Goal: add a monitoring account, add a trading account, and verify the runtime is ready.
 
@@ -43,7 +43,7 @@ Goal: add a monitoring account, add a trading account, and verify the runtime is
 
 ```bash
 # Trading account
- dpro-hl account add-api 0xYourMasterAddress 0xYourAgentPrivateKey main password
+ dpro-hl account add-api 0xYourMasterAddress 0xYourAgentPrivateKey main --password <password>
 ```
 
 ### 3. Verify configured accounts
@@ -68,30 +68,7 @@ Expected outcome:
 
 ---
 
-## Example 2: Discover the exact tradable symbol before trading
-
-Goal: resolve the exact symbol and market namespace before placing an order.
-
-### 1. List markets
-
-```bash
- dpro-hl markets ls
-```
-
-### 2. Use the exact symbol from the output
-
-Examples:
-- `PURR` for spot
-- `BTC` for perp when used with the `perp` namespace
-- `xyz:NVDA` for HIP-3
-
-Important:
-- `AAPL` and `xyz:AAPL` are different assets
-- do not trade from a guessed symbol when the market type is unclear
-
----
-
-## Example 3: Spot trading workflow
+## Spot workflow
 
 Goal: buy a spot asset, then confirm the order and fills.
 
@@ -127,7 +104,7 @@ Expected outcome:
 
 ---
 
-## Example 4: Perp trading workflow
+## Perp workflow
 
 Goal: configure risk, place a perp order, and confirm the resulting state.
 
@@ -173,7 +150,7 @@ Expected outcome:
 
 ---
 
-## Example 5: HIP-3 trading workflow
+## HIP-3 workflow
 
 Goal: trade a HIP-3 asset using its exact namespaced symbol.
 
@@ -216,7 +193,7 @@ Expected outcome:
 
 ---
 
-## Example 6: Multi-account workflow
+## Multi-account workflow
 
 Goal: inspect and operate on a specific account safely.
 
@@ -241,7 +218,7 @@ Recommended practice:
 
 ---
 
-## Example 7: Onchain analytics workflow
+## Onchain workflow
 
 Goal: inspect dPro onchain data without account authentication.
 
@@ -272,7 +249,7 @@ Notes:
 
 ---
 
-## Example 8: Natural-language to canonical command
+## Natural-language to canonical command workflow
 
 Goal: understand how user intent maps into the canonical command model.
 
@@ -292,29 +269,3 @@ Examples:
 
 - “Show me the top 5 PURR holders”
   -> `dpro-hl onchain spot-holders PURR --limit 5`
-
----
-
-## Example 9: Safe trading checklist
-
-Use this checklist before any live write:
-
-1. resolve the exact market namespace: `spot`, `perp`, or `hip3`
-2. resolve the exact symbol from `dpro-hl markets ls`
-3. verify the target account and password availability
-4. inspect quote, book, balance, or position state when relevant
-5. place the order or perform the account action
-6. verify via `orders`, `fills`, or `positions`
-7. do not blind-retry an uncertain write result
-
----
-
-## Example 10: When to leave this file and use another reference
-
-Use:
-- `README.md` when you need install steps, storage layout, runtime context, or project structure
-- `references/commands.md` when you need exact flags or full command syntax
-- `references/onchain.md` when you need endpoint mapping or response-shape behavior
-- `references/troubleshooting.md` when a command fails and you need the direct fix
-
-This file should stay focused on end-to-end workflows, not exhaustive command documentation.
