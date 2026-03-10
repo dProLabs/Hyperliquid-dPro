@@ -8,7 +8,7 @@ It provides a single skill surface for:
 - spot, perp, and HIP-3 trading
 - dPro onchain read-only analytics
 
-It is designed for AI agent environments such as **OpenClaw**, **Claude Code**, **Codex**, and **OpenCode**. No global CLI installation is required. The skill supports **200+ perpetual contracts**, **spot tokens**, and **namespaced HIP-3 assets**. fileciteturn7file0
+It is designed for AI agent environments such as **OpenClaw**, **Claude Code**, **Codex**, and **OpenCode**. No global CLI installation is required. The skill supports **200+ perpetual contracts**, **spot tokens**, and **namespaced HIP-3 assets**.
 
 ---
 
@@ -26,7 +26,7 @@ Key capabilities include:
 - **Flexible invocation**: canonical command syntax, slash-style input, or natural language
 - **Agent-first runtime**: programmatic entry point via `runHyperliquidSkill(...)`
 
-The original README already covered these capabilities, installation paths, runtime context, account storage, and example commands; this rewrite keeps the same scope but organizes it around real usage flow. fileciteturn7file0
+The original README already covered these capabilities, installation paths, runtime context, account storage, and example commands; this rewrite keeps the same scope but organizes it around real usage flow.
 
 ---
 
@@ -50,7 +50,7 @@ Uninstall:
 clawhub uninstall dpro-hl
 ```
 
-Clawhub handles dependency resolution, version management, and skill registration automatically. fileciteturn7file0
+Clawhub handles dependency resolution, version management, and skill registration automatically.
 
 ### Local development install
 
@@ -112,7 +112,7 @@ See:
 
 ### Other agent environments
 
-Copy the skill directory into the environment's skill folder and ensure Node.js is available at runtime. fileciteturn7file0
+Copy the skill directory into the environment's skill folder and ensure Node.js is available at runtime.
 
 ---
 
@@ -132,7 +132,7 @@ dpro-hl positions
 dpro-hl perp order limit buy 0.01 BTC 50000
 ```
 
-The agent should route requests through `SKILL.md` and resolve them into the command surface defined by the repository. fileciteturn7file0
+The agent should route requests through `SKILL.md` and resolve them into the command surface defined by the repository.
 
 ### Programmatic usage
 
@@ -255,7 +255,7 @@ dpro-hl onchain leaderboard --limit 10 --sort pnl_day --order desc
 
 ## Trading safety notes
 
-Live trading requires an API account and a password to decrypt stored private keys for write actions. The original README also documented `runtimeContext.password` and `--password <value>` support. In normal agent usage, prefer secure runtime input over exposing secrets in logs or shell history. fileciteturn7file0
+Live trading requires an API account and a password to decrypt stored private keys for write actions. The original README also documented `runtimeContext.password` and `--password <value>` support. In normal agent usage, prefer secure runtime input over exposing secrets in logs or shell history.
 
 Important rules:
 
@@ -302,7 +302,7 @@ dpro-hl positions <alias>
 dpro-hl account add-readonly <address> [alias]
 ```
 
-Configured accounts show alias, address, mode, and default status. fileciteturn7file0
+Configured accounts show alias, address, mode, and default status.
 
 ---
 
@@ -317,7 +317,7 @@ dpro-hl quote BTC
 dpro-hl quote xyz:NVDA
 ```
 
-Typical quote output includes price, 24h change, funding, open interest, mark/oracle, and 24h volume when available. fileciteturn7file0
+Typical quote output includes price, 24h change, funding, open interest, mark/oracle, and 24h volume when available.
 
 ### Order book
 
@@ -334,7 +334,7 @@ dpro-hl candles BTC --interval 1h --last 48
 
 Valid intervals:
 
-`1m`, `3m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `8h`, `12h`, `1d`, `3d`, `1w`, `1M` fileciteturn7file0
+`1m`, `3m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `8h`, `12h`, `1d`, `3d`, `1w`, `1M`
 
 ### Movers and overview
 
@@ -355,7 +355,7 @@ Notes:
 
 - namespaced perp coin normalization is `dex` lowercase + symbol uppercase
 - example: `XYZ:nvda` -> `xyz:NVDA`
-- the onchain base URL is fixed in runtime: `https://api.d.pro/` fileciteturn7file0
+- the onchain base URL is fixed in runtime: `https://api.d.pro/`
 
 Use cases:
 
@@ -377,7 +377,7 @@ For exact endpoint behavior and normalization rules, see `references/onchain.md`
 | `--account <alias>` | Use a specific account for this command |
 | `--password <value>` | Provide master password inline for write actions |
 
-If possible, prefer secure runtime context for passwords instead of inline command arguments. fileciteturn7file0
+If possible, prefer secure runtime context for passwords instead of inline command arguments.
 
 ---
 
@@ -467,7 +467,7 @@ Behavior:
 - runs on each `runHyperliquidSkill(...)` invocation
 - `git` installs use `git pull --ff-only` and `npm install --silent` when remote is ahead
 - `clawhub` installs run `clawhub update <skill-slug>` on the configured interval
-- failures and timeouts surface as a warning line without blocking the requested command fileciteturn7file0
+- failures and timeouts surface as a warning line without blocking the requested command
 
 ---
 
@@ -479,7 +479,7 @@ Behavior:
 | `~/.config/dpro-hl/keys.enc` | AES-encrypted agent private keys |
 | `~/.config/dpro-hl/upgrade-state.json` | Auto-upgrade state and warning dedupe metadata |
 
-Private keys are never stored in plain text. A master password is required to encrypt and decrypt keys. fileciteturn7file0
+Private keys are never stored in plain text. A master password is required to encrypt and decrypt keys.
 
 ---
 
