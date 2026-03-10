@@ -19,6 +19,19 @@ const EXCLUDED_PREFIXES = [
   '/api/v1/referral/',
 ];
 
+const FALLBACK_ALLOWLIST = new Set([
+  '/api/v1',
+  '/api/v1/health',
+  '/api/v1/hl/prices/mids',
+  '/api/v1/hl/meta/spot',
+  '/api/v1/hl/meta/perps-universe',
+  '/api/v1/hl/spot/holders',
+  '/api/v1/hl/spot/holders/counts',
+  '/api/v1/hl/perp/holders',
+  '/api/v1/hl/perp/liquidation-map',
+  '/api/v1/leaderboard',
+]);
+
 let openapiCache = null;
 let allowlistCache = null;
 
@@ -46,7 +59,12 @@ function isExcludedPath(path) {
 }
 
 async function buildAllowlist() {
-  const spec = await loadOpenapi();
+  let spec;
+  try {
+    spec = await loadOpenapi();
+  } catch {
+    return new Set(FALLBACK_ALLOWLIST);
+  }
   const paths = spec?.paths || {};
   const allowlist = new Set();
 

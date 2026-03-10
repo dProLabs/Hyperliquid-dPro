@@ -4,11 +4,23 @@ import { inputError, unknownCommand } from './errors.mjs';
 
 function stripPrefix(raw) {
   const trimmed = raw.trim();
-  if (trimmed.startsWith('/hl ') || trimmed.startsWith('/hl\t')) return trimmed.slice(4).trim();
-  if (trimmed === '/hl') return '';
-  if (trimmed.startsWith('hl ') || trimmed.startsWith('hl\t')) return trimmed.slice(3).trim();
-  if (trimmed === 'hl') return '';
+  if (trimmed.startsWith('/dpro-hl ') || trimmed.startsWith('/dpro-hl\t')) return trimmed.slice(9).trim();
+  if (trimmed === '/dpro-hl') return '';
+  if (trimmed.startsWith('dpro-hl ') || trimmed.startsWith('dpro-hl\t')) return trimmed.slice(8).trim();
+  if (trimmed === 'dpro-hl') return '';
   return null; // no prefix found — try natural language
+}
+
+function hasLegacyPrefix(raw) {
+  const trimmed = raw.trim();
+  return (
+    trimmed.startsWith('/hl ')
+    || trimmed.startsWith('/hl\t')
+    || trimmed === '/hl'
+    || trimmed.startsWith('hl ')
+    || trimmed.startsWith('hl\t')
+    || trimmed === 'hl'
+  );
 }
 
 // --- Tokenizer ---
@@ -70,6 +82,7 @@ function extractFlags(tokens) {
 const MARKET_ACTIONS = new Set(['quote', 'book', 'candles', 'movers', 'overview']);
 const ACCOUNT_ACTIONS = new Set(['add-readonly', 'add-api', 'ls', 'remove', 'set-default', 'positions', 'balances', 'orders', 'fills', 'portfolio']);
 const TRADE_ACTIONS = new Set(['limit', 'market', 'cancel', 'cancel-all', 'cancel-by-cloid', 'set-leverage', 'topup-isolated', 'modify']);
+const TRADE_NAMESPACES = new Set(['spot', 'perp', 'hip3']);
 const ONCHAIN_ACTIONS = new Set(['ping', 'health', 'mids', 'spot-meta', 'perps-meta', 'spot-holders', 'spot-holder-counts', 'perp-holders', 'liquidation-map', 'leaderboard']);
 
 // --- Structured command parsing ---
@@ -131,47 +144,18 @@ function parseStructured(tokens, flags, raw) {
     };
   }
 
-  // Trade actions: "order limit buy 0.01 BTC 50000", "order cancel <oid>"
+  // Explicit trade namespaces: "spot|perp|hip3 order ..."
+  if (TRADE_NAMESPACES.has(first)) {
+    const marketType = first;
+    if (tokens[1]?.toLowerCase() !== 'order') {
+      throw inputError(`Usage: dpro-hl ${marketType} order <${[...TRADE_ACTIONS].join('|')}> ...`);
+    }
+    return parseTradeAction(marketType, tokens.slice(2), flags, raw);
+  }
+
+  // Legacy trade action is now disabled.
   if (first === 'order') {
-    const action = tokens[1]?.toLowerCase();
-    if (!action || !TRADE_ACTIONS.has(action)) {
-      throw unknownCommand(`Unknown order action: ${action || '(none)'}. Available: ${[...TRADE_ACTIONS].join(', ')}`);
-    }
-
-    if (action === 'limit' || action === 'market') {
-      return parseOrderCommand(action, tokens.slice(2), flags, raw);
-    }
-    if (action === 'cancel') {
-      return { domain: 'trade', action: 'cancel', target: tokens[2] || null, args: {}, flags, raw };
-    }
-    if (action === 'cancel-all') {
-      return { domain: 'trade', action: 'cancel-all', target: null, args: {}, flags, raw };
-    }
-    if (action === 'cancel-by-cloid') {
-      return { domain: 'trade', action: 'cancel-by-cloid', target: tokens[2]?.toUpperCase() || null, args: { cloid: tokens[3] }, flags, raw };
-    }
-    if (action === 'set-leverage') {
-      return {
-        domain: 'trade',
-        action: 'set-leverage',
-        target: tokens[2]?.toUpperCase() || null,
-        args: { leverage: tokens[3] },
-        flags,
-        raw,
-      };
-    }
-    if (action === 'topup-isolated') {
-      return {
-        domain: 'trade',
-        action: 'topup-isolated',
-        target: tokens[2]?.toUpperCase() || null,
-        args: { usd: tokens[3] },
-        flags,
-        raw,
-      };
-    }
-
-    return { domain: 'trade', action, target: tokens[2] || null, args: { rest: tokens.slice(3) }, flags, raw };
+    throw inputError('Legacy command "dpro-hl order ..." is no longer supported. Use "dpro-hl spot|perp|hip3 order ...".');
   }
 
   // Onchain actions: "onchain health", "onchain spot-holders PURR"
@@ -190,10 +174,54 @@ function parseStructured(tokens, flags, raw) {
     };
   }
 
-  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, onchain, account, order, positions, balances, orders, fills`);
+  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, onchain, account, spot order, perp order, hip3 order, positions, balances, orders, fills`);
 }
 
-function parseOrderCommand(action, tokens, flags, raw) {
+function parseTradeAction(marketType, tokens, flags, raw) {
+  const action = tokens[0]?.toLowerCase();
+  if (!action || !TRADE_ACTIONS.has(action)) {
+    throw unknownCommand(`Unknown order action: ${action || '(none)'}. Available: ${[...TRADE_ACTIONS].join(', ')}`);
+  }
+
+  if (action === 'limit' || action === 'market') {
+    return parseOrderCommand(marketType, action, tokens.slice(1), flags, raw);
+  }
+  if (action === 'cancel') {
+    return { domain: 'trade', marketType, action: 'cancel', target: tokens[1] || null, args: {}, flags, raw };
+  }
+  if (action === 'cancel-all') {
+    return { domain: 'trade', marketType, action: 'cancel-all', target: null, args: {}, flags, raw };
+  }
+  if (action === 'cancel-by-cloid') {
+    return { domain: 'trade', marketType, action: 'cancel-by-cloid', target: tokens[1]?.toUpperCase() || null, args: { cloid: tokens[2] }, flags, raw };
+  }
+  if (action === 'set-leverage') {
+    return {
+      domain: 'trade',
+      marketType,
+      action: 'set-leverage',
+      target: tokens[1]?.toUpperCase() || null,
+      args: { leverage: tokens[2] },
+      flags,
+      raw,
+    };
+  }
+  if (action === 'topup-isolated') {
+    return {
+      domain: 'trade',
+      marketType,
+      action: 'topup-isolated',
+      target: tokens[1]?.toUpperCase() || null,
+      args: { usd: tokens[2] },
+      flags,
+      raw,
+    };
+  }
+
+  return { domain: 'trade', marketType, action, target: tokens[1] || null, args: { rest: tokens.slice(2) }, flags, raw };
+}
+
+function parseOrderCommand(marketType, action, tokens, flags, raw) {
   // limit: buy|sell <size> <coin> <price>
   // market: buy|sell <size> <coin>
   const side = tokens[0]?.toLowerCase();
@@ -205,7 +233,7 @@ function parseOrderCommand(action, tokens, flags, raw) {
   const coin = tokens[2]?.toUpperCase();
 
   if (!size || !coin) {
-    throw inputError(`Usage: order ${action} ${side} <size> <coin>${action === 'limit' ? ' <price>' : ''}`);
+    throw inputError(`Usage: dpro-hl ${marketType} order ${action} ${side} <size> <coin>${action === 'limit' ? ' <price>' : ''}`);
   }
 
   const args = { side, size };
@@ -216,7 +244,7 @@ function parseOrderCommand(action, tokens, flags, raw) {
     args.price = price;
   }
 
-  return { domain: 'trade', action, target: coin, args, flags, raw };
+  return { domain: 'trade', marketType, action, target: coin, args, flags, raw };
 }
 
 // --- Natural language fallback ---
@@ -254,6 +282,9 @@ function parseNaturalLanguage(raw) {
   for (const { pattern, domain, action, targetGroup, extractArgs } of NL_PATTERNS) {
     const m = raw.match(pattern);
     if (m) {
+      if (domain === 'trade') {
+        throw inputError('Trading commands must specify a market namespace. Use "dpro-hl spot|perp|hip3 order ...".');
+      }
       const target = targetGroup !== null ? m[targetGroup]?.toUpperCase() : null;
       const args = extractArgs ? extractArgs(m) : {};
       const flags = action === 'candles' ? extractCandleParams(raw) : {};
@@ -269,6 +300,10 @@ export function parseInput(rawInput) {
   const raw = rawInput.trim();
   if (!raw) throw inputError('Empty input');
 
+  if (hasLegacyPrefix(raw)) {
+    throw unknownCommand(`Could not parse input: "${raw}". Use "dpro-hl ..." instead.`);
+  }
+
   // Try prefix-based parsing
   const stripped = stripPrefix(raw);
   if (stripped !== null) {
@@ -281,5 +316,5 @@ export function parseInput(rawInput) {
   const nlResult = parseNaturalLanguage(raw);
   if (nlResult) return nlResult;
 
-  throw unknownCommand(`Could not parse input: "${raw}". Try "hl quote BTC" or "hl help".`);
+  throw unknownCommand(`Could not parse input: "${raw}". Try "dpro-hl quote BTC" or "dpro-hl help".`);
 }

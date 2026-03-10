@@ -20,6 +20,7 @@ const defaultDeps = {
   getAgentPrivateKey,
 };
 const deps = { ...defaultDeps };
+const TRADE_MARKET_TYPES = new Set(['spot', 'perp', 'hip3']);
 
 function getTradeContext(parsed, ctx) {
   const account = deps.resolveAccount(parsed.flags?.account || null);
@@ -31,19 +32,90 @@ function getTradeContext(parsed, ctx) {
   return { account, privateKey, isTestnet };
 }
 
-async function resolveAssetWithHints(coin, isTestnet = false) {
+function assertMarketType(parsed) {
+  const marketType = parsed?.marketType;
+  if (!TRADE_MARKET_TYPES.has(marketType)) {
+    throw inputError('Trade command requires explicit market namespace: spot, perp, or hip3.');
+  }
+  return marketType;
+}
+
+function isNamespacedCoin(coin) {
+  return String(coin).includes(':');
+}
+
+function validateNamespaceCoinPair(coin, marketType) {
+  const namespaced = isNamespacedCoin(coin);
+  if (marketType === 'hip3' && !namespaced) {
+    throw inputError(`HIP-3 commands require namespaced symbols like "xyz:NVDA". Got: ${coin}`);
+  }
+  if (marketType === 'perp' && namespaced) {
+    throw inputError(`Perp commands do not accept namespaced HIP-3 symbols. Use "dpro-hl hip3 order ..." for ${coin}.`);
+  }
+}
+
+function assertReduceOnlyAllowed(marketType, flags = {}) {
+  if (marketType === 'spot' && flags['reduce-only']) {
+    throw inputError('`--reduce-only` is not supported for spot orders.');
+  }
+}
+
+async function resolveAssetWithNamespace(coin, marketType, isTestnet = false) {
+  const hint = marketType === 'spot' ? 'spot' : 'perp';
   try {
-    return await deps.resolveAsset(coin, 'perp', { isTestnet });
+    const assetInfo = await deps.resolveAsset(coin, hint, { isTestnet });
+    if (marketType === 'spot' && assetInfo.kind !== 'spot') {
+      throw inputError(`${coin} is not a spot market.`);
+    }
+    if (marketType !== 'spot' && assetInfo.kind !== 'perp') {
+      throw inputError(`${coin} is not a perp-style market.`);
+    }
+    return assetInfo;
   } catch (err) {
+    if (err?.code === 'INPUT_ERROR') throw err;
     if (err?.code !== 'ASSET_NOT_FOUND') throw err;
     const related = await deps.findRelatedSymbols(coin, 6, { isTestnet });
     const hints = [];
     if (related.length) hints.push(`Related symbols: ${related.join(', ')}.`);
     if (String(coin).includes(':') || related.some(s => s.includes(':'))) {
-      hints.push('AAPL and xyz:AAPL are different assets; use the exact coin from "hl markets ls".');
+      hints.push('AAPL and xyz:AAPL are different assets; use the exact coin from "dpro-hl markets ls".');
     }
     throw assetNotFound(coin, hints.join(' '));
   }
+}
+
+async function resolveOrderNamespace(order, isTestnet = false) {
+  const coin = assertCoin(order?.coin);
+  if (isNamespacedCoin(coin)) return 'hip3';
+
+  let spotAsset = null;
+  let perpAsset = null;
+  try {
+    const resolved = await deps.resolveAsset(coin, 'spot', { isTestnet });
+    if (resolved?.kind === 'spot') spotAsset = resolved;
+  } catch (err) {
+    if (err?.code !== 'ASSET_NOT_FOUND') throw err;
+  }
+  try {
+    const resolved = await deps.resolveAsset(coin, 'perp', { isTestnet });
+    if (resolved?.kind === 'perp') perpAsset = resolved;
+  } catch (err) {
+    if (err?.code !== 'ASSET_NOT_FOUND') throw err;
+  }
+
+  if (spotAsset && !perpAsset) return 'spot';
+  if (!spotAsset && perpAsset) return 'perp';
+  if (!spotAsset && !perpAsset) {
+    throw inputError(`Unable to classify order market namespace for ${coin}.`);
+  }
+
+  const orderAsset = Number(order?.asset);
+  if (Number.isFinite(orderAsset)) {
+    if (orderAsset === Number(spotAsset.asset)) return 'spot';
+    if (orderAsset === Number(perpAsset.asset)) return 'perp';
+  }
+
+  return 'ambiguous';
 }
 
 function parseOrderResponse(response, coin, side, size, price) {
@@ -123,14 +195,17 @@ export function __resetTradeDepsForTest() {
 }
 
 async function limit(parsed, ctx) {
+  const marketType = assertMarketType(parsed);
   const { side, size, price } = parsed.args;
   assertSide(side);
   assertPositiveNumber(size, 'size');
   assertPositiveNumber(price, 'price');
   const coin = assertCoin(parsed.target);
+  validateNamespaceCoinPair(coin, marketType);
+  assertReduceOnlyAllowed(marketType, parsed.flags);
 
   const { account, privateKey, isTestnet } = getTradeContext(parsed, ctx);
-  const assetInfo = await resolveAssetWithHints(coin, isTestnet);
+  const assetInfo = await resolveAssetWithNamespace(coin, marketType, isTestnet);
 
   const tif = parsed.flags?.tif ? assertTif(parsed.flags.tif) : 'Gtc';
   const reduceOnly = !!parsed.flags?.['reduce-only'];
@@ -165,17 +240,20 @@ async function limit(parsed, ctx) {
 }
 
 async function market(parsed, ctx) {
+  const marketType = assertMarketType(parsed);
   const { side, size } = parsed.args;
   assertSide(side);
   assertPositiveNumber(size, 'size');
   const coin = assertCoin(parsed.target);
+  validateNamespaceCoinPair(coin, marketType);
+  assertReduceOnlyAllowed(marketType, parsed.flags);
 
   const { account, privateKey, isTestnet } = getTradeContext(parsed, ctx);
 
   // Fetch mid price and resolve asset in parallel
   const [mids, assetInfo, marketInfo] = await Promise.all([
     deps.infoClient.getAllMids({ isTestnet }),
-    resolveAssetWithHints(coin, isTestnet),
+    resolveAssetWithNamespace(coin, marketType, isTestnet),
     deps.findMarket(coin, { isTestnet }),
   ]);
 
@@ -228,8 +306,9 @@ async function market(parsed, ctx) {
 }
 
 async function cancel(parsed, ctx) {
+  const marketType = assertMarketType(parsed);
   const oid = parsed.target;
-  if (!oid) throw inputError('Usage: hl order cancel <oid>');
+  if (!oid) throw inputError(`Usage: dpro-hl ${marketType} order cancel <oid>`);
 
   const { account, privateKey, isTestnet } = getTradeContext(parsed, ctx);
 
@@ -238,7 +317,17 @@ async function cancel(parsed, ctx) {
   const order = openOrders?.find(o => String(o.oid) === String(oid));
   if (!order) throw inputError(`Order ${oid} not found in open orders.`);
 
-  const assetInfo = await resolveAssetWithHints(order.coin, isTestnet);
+  const orderNamespace = await resolveOrderNamespace(order, isTestnet);
+  if (orderNamespace === 'ambiguous') {
+    throw inputError(`Order ${oid} is ambiguous between spot and perp. Use explicit coin + cloid in the target namespace.`);
+  }
+  if (orderNamespace !== marketType) {
+    throw inputError(`Order ${oid} belongs to ${orderNamespace}, not ${marketType}.`);
+  }
+
+  const orderCoin = assertCoin(order.coin);
+  validateNamespaceCoinPair(orderCoin, marketType);
+  const assetInfo = await resolveAssetWithNamespace(orderCoin, marketType, isTestnet);
 
   const response = await deps.exchangeClient.cancelOrders(
     [{ asset: assetInfo.asset, oid: Number(oid) }],
@@ -258,6 +347,7 @@ async function cancel(parsed, ctx) {
 }
 
 async function cancelAll(parsed, ctx) {
+  const marketType = assertMarketType(parsed);
   const { account, privateKey, isTestnet } = getTradeContext(parsed, ctx);
 
   const openOrders = await deps.infoClient.getOpenOrders(account.masterAddress, { isTestnet, dex: 'ALL_DEXS' });
@@ -265,11 +355,19 @@ async function cancelAll(parsed, ctx) {
     return { ok: true, type: 'cancel-all_result', data: { count: 0 } };
   }
 
-  // Group cancels — need asset resolution for each
+  // Group cancels by namespace.
   const cancels = [];
   for (const o of openOrders) {
-    const assetInfo = await resolveAssetWithHints(o.coin, isTestnet);
+    const namespace = await resolveOrderNamespace(o, isTestnet);
+    if (namespace !== marketType) continue;
+    const orderCoin = assertCoin(o.coin);
+    validateNamespaceCoinPair(orderCoin, marketType);
+    const assetInfo = await resolveAssetWithNamespace(orderCoin, marketType, isTestnet);
     cancels.push({ asset: assetInfo.asset, oid: o.oid });
+  }
+
+  if (!cancels.length) {
+    return { ok: true, type: 'cancel-all_result', data: { count: 0 } };
   }
 
   await deps.exchangeClient.cancelOrders(cancels, privateKey, account.agentAddress, { isTestnet });
@@ -278,12 +376,14 @@ async function cancelAll(parsed, ctx) {
 }
 
 async function cancelByCloid(parsed, ctx) {
+  const marketType = assertMarketType(parsed);
   const coin = assertCoin(parsed.target);
+  validateNamespaceCoinPair(coin, marketType);
   const cloid = parsed.args?.cloid;
-  if (!cloid) throw inputError('Usage: hl order cancel-by-cloid <coin> <cloid>');
+  if (!cloid) throw inputError(`Usage: dpro-hl ${marketType} order cancel-by-cloid <coin> <cloid>`);
 
   const { account, privateKey, isTestnet } = getTradeContext(parsed, ctx);
-  const assetInfo = await resolveAssetWithHints(coin, isTestnet);
+  const assetInfo = await resolveAssetWithNamespace(coin, marketType, isTestnet);
 
   const response = await deps.exchangeClient.cancelByCloid(
     assetInfo.asset, cloid, privateKey, account.agentAddress, { isTestnet }
@@ -297,11 +397,16 @@ async function cancelByCloid(parsed, ctx) {
 }
 
 async function setLeverage(parsed, ctx) {
+  const marketType = assertMarketType(parsed);
   const coin = assertCoin(parsed.target);
+  validateNamespaceCoinPair(coin, marketType);
   const leverage = assertPositiveInteger(parsed.args?.leverage, 'leverage');
+  if (marketType === 'spot') {
+    throw inputError('Cannot set leverage on spot markets.');
+  }
 
   const { account, privateKey, isTestnet } = getTradeContext(parsed, ctx);
-  const assetInfo = await resolveAssetWithHints(coin, isTestnet);
+  const assetInfo = await resolveAssetWithNamespace(coin, marketType, isTestnet);
 
   if (assetInfo.kind === 'spot') {
     throw inputError('Cannot set leverage on spot markets.');
@@ -321,11 +426,16 @@ async function setLeverage(parsed, ctx) {
 }
 
 async function topupIsolated(parsed, ctx) {
+  const marketType = assertMarketType(parsed);
   const coin = assertCoin(parsed.target);
+  validateNamespaceCoinPair(coin, marketType);
   const usd = assertPositiveNumber(parsed.args?.usd, 'USD amount');
+  if (marketType === 'spot') {
+    throw inputError('Cannot topup isolated margin on spot markets.');
+  }
 
   const { account, privateKey, isTestnet } = getTradeContext(parsed, ctx);
-  const assetInfo = await resolveAssetWithHints(coin, isTestnet);
+  const assetInfo = await resolveAssetWithNamespace(coin, marketType, isTestnet);
 
   if (assetInfo.kind === 'spot') {
     throw inputError('Cannot topup isolated margin on spot markets.');

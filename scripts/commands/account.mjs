@@ -17,7 +17,7 @@ async function deriveAddress(privateKeyHex) {
 
 async function addReadonly(parsed) {
   const address = parsed.target;
-  if (!address) throw inputError('Usage: hl account add-readonly <address> [alias]');
+  if (!address) throw inputError('Usage: dpro-hl account add-readonly <address> [alias]');
   assertAddress(address, 'master address');
 
   const alias = parsed.args?.rest?.[0] || address.slice(0, 8);
@@ -32,7 +32,7 @@ async function addApi(parsed, ctx) {
   const alias = parsed.args?.rest?.[1];
 
   if (!masterAddress || !agentPrivateKey) {
-    throw inputError('Usage: hl account add-api <masterAddress> <agentPrivateKey> [alias]');
+    throw inputError('Usage: dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]  --password <password>');
   }
 
   assertAddress(masterAddress, 'master address');
@@ -63,14 +63,14 @@ async function ls() {
 
 async function remove(parsed) {
   const alias = parsed.target;
-  if (!alias) throw inputError('Usage: hl account remove <alias>');
+  if (!alias) throw inputError('Usage: dpro-hl account remove <alias>');
   store.removeAccount(alias);
   return { ok: true, type: 'account-removed', data: { alias } };
 }
 
 async function setDefault(parsed) {
   const alias = parsed.target;
-  if (!alias) throw inputError('Usage: hl account set-default <alias>');
+  if (!alias) throw inputError('Usage: dpro-hl account set-default <alias>');
   store.setDefaultAccount(alias);
   return { ok: true, type: 'account-default-set', data: { alias } };
 }

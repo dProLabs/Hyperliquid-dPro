@@ -1,88 +1,58 @@
 # Hyperliquid-dPro
 
-An agent skill for [Hyperliquid DEX](https://hyperliquid.xyz) — market queries, account management, spot/perps/HIP-3 trading, and onchain analytics inside AI agent environments (OpenClaw / Claude Code / Codex / OpenCode).
+Hyperliquid-dPro is an agent skill for **Hyperliquid DEX** and **dPro onchain analytics**.
+It provides a single skill surface for:
 
-No global CLI install required. Supports 200+ perpetual contracts, spot tokens, and namespaced HIP-3 assets.
+- market reads
+- account reads and account management
+- spot, perp, and HIP-3 trading
+- dPro onchain read-only analytics
 
-## Installation
+It is designed for AI agent environments such as **OpenClaw**, **Claude Code**, **Codex**, and **OpenCode**. No global CLI installation is required. The skill supports **200+ perpetual contracts**, **spot tokens**, and **namespaced HIP-3 assets**. fileciteturn7file0
 
-### Via OpenClaw (Recommended)
+---
 
-[OpenClaw](https://openclaw.ai) is a skill registry and package manager for AI agent environments.
+## Why this repo exists
 
-```bash
-# Install the Hyperliquid skill from GitHub
-openclaw install github:dProLabs/Hyperliquid-dPro
-```
+This repository packages Hyperliquid workflows into a reusable agent skill instead of a standalone global CLI.
 
-That's it. The skill is now available in your agent environment. OpenClaw handles dependency resolution, version management, and skill registration automatically.
+Key capabilities include:
 
-To update to the latest version:
+- **Market data**: quotes, books, candles, movers, overview, and market listing
+- **Account workflows**: encrypted multi-account storage, balances, positions, orders, fills, and portfolio views
+- **Trading namespaces**: explicit `spot`, `perp`, and `hip3` order trees
+- **Risk controls**: leverage updates and isolated-margin top-ups for supported perp-style markets
+- **Onchain analytics**: mids, metadata, holder distribution, liquidation maps, and leaderboard views
+- **Flexible invocation**: canonical command syntax, slash-style input, or natural language
+- **Agent-first runtime**: programmatic entry point via `runHyperliquidSkill(...)`
 
-```bash
-openclaw update github:dProLabs/Hyperliquid-dPro
-```
+The original README already covered these capabilities, installation paths, runtime context, account storage, and example commands; this rewrite keeps the same scope but organizes it around real usage flow. fileciteturn7file0
 
-To uninstall:
+---
 
-```bash
-openclaw uninstall hyperliquid-dpro
-```
+## Quick start
 
-### For Claude Code
-
-Use the included plugin manifests:
-
-```bash
-# In Claude Code
-/plugin marketplace add dProLabs/Hyperliquid-dPro
-/plugin install hyperliquid-dpro
-```
-
-Or install manually:
+### Fastest path: install with Clawhub
 
 ```bash
-# Clone into your project's skills directory
-git clone https://github.com/dProLabs/Hyperliquid-dPro.git .claude/skills/hyperliquid-dpro
-
-# Install dependencies
-cd .claude/skills/hyperliquid-dpro
-npm install
+clawhub install github:dProLabs/Hyperliquid-dPro
 ```
 
-Then in your `CLAUDE.md` or agent config, reference the skill:
+Update manually if needed:
 
-```markdown
-Skills: .claude/skills/hyperliquid-dpro/SKILL.md
+```bash
+clawhub update github:dProLabs/Hyperliquid-dPro
 ```
 
-Claude plugin files:
-- `.claude-plugin/plugin.json`
-- `.claude-plugin/marketplace.json`
+Uninstall:
 
-### For Cursor
+```bash
+clawhub uninstall dpro-hl
+```
 
-Use the Cursor plugin manifest in:
+Clawhub handles dependency resolution, version management, and skill registration automatically. fileciteturn7file0
 
-- `.cursor-plugin/plugin.json`
-
-### For Codex
-
-Follow:
-
-- `.codex/INSTALL.md`
-
-### For OpenCode
-
-Follow:
-
-- `.opencode/INSTALL.md`
-
-### For Other Agent Environments
-
-Copy the skill folder into your agent's skill directory and ensure Node.js is available at runtime.
-
-### Manual / Standalone
+### Local development install
 
 ```bash
 git clone https://github.com/dProLabs/Hyperliquid-dPro.git
@@ -92,370 +62,433 @@ npm install
 
 ---
 
-## Usage
+## Supported environments
 
-### Inside an Agent
+### Claude Code
 
-Once installed, simply talk to your agent using natural language or command syntax:
+Use the included plugin manifests:
 
-```
-hl quote BTC
-hl book ETH --levels 5
-hl markets ls
-hl positions
-hl order limit buy 0.01 BTC 50000
+```bash
+/plugin marketplace add dProLabs/Hyperliquid-dPro
+/plugin install dpro-hl
 ```
 
-The agent will invoke the skill automatically based on `SKILL.md`.
+Manual install:
 
-### Programmatic
+```bash
+git clone https://github.com/dProLabs/Hyperliquid-dPro.git .claude/skills/dpro-hl
+cd .claude/skills/dpro-hl
+npm install
+```
+
+Then reference the skill in your agent config:
+
+```markdown
+Skills: .claude/skills/dpro-hl/SKILL.md
+```
+
+Plugin files:
+
+- `.claude-plugin/plugin.json`
+- `.claude-plugin/marketplace.json`
+
+### Cursor
+
+Use:
+
+- `.cursor-plugin/plugin.json`
+
+### Codex
+
+See:
+
+- `.codex/INSTALL.md`
+
+### OpenCode
+
+See:
+
+- `.opencode/INSTALL.md`
+
+### Other agent environments
+
+Copy the skill directory into the environment's skill folder and ensure Node.js is available at runtime. fileciteturn7file0
+
+---
+
+## How to use the skill
+
+### Inside an agent
+
+Once installed, talk to your agent using either natural language or canonical skill syntax.
+
+Examples:
+
+```text
+dpro-hl quote BTC
+dpro-hl book ETH --levels 5
+dpro-hl markets ls
+dpro-hl positions
+dpro-hl perp order limit buy 0.01 BTC 50000
+```
+
+The agent should route requests through `SKILL.md` and resolve them into the command surface defined by the repository. fileciteturn7file0
+
+### Programmatic usage
 
 ```js
 import { runHyperliquidSkill } from './scripts/entry.mjs';
 
-// Read-only (no account needed)
-const result = await runHyperliquidSkill('hl quote BTC');
-console.log(result);
+// Read-only
+const quote = await runHyperliquidSkill('dpro-hl quote BTC');
+console.log(quote);
 
-// Trading (password required to decrypt private key)
-const result = await runHyperliquidSkill(
-  'hl order limit buy 0.01 BTC 50000',
+// Live trading
+const order = await runHyperliquidSkill(
+  'dpro-hl perp order limit buy 0.01 BTC 50000',
   { password: 'yourMasterPassword' }
 );
+console.log(order);
 ```
 
-Runtime context:
-- `password`: required for API account decryption and all write actions
-- `network`: `mainnet` (default) or `testnet`
-
-### Command Line
+### Smoke test
 
 ```bash
 node --input-type=module -e "
   import { runHyperliquidSkill } from './scripts/entry.mjs';
-  console.log(await runHyperliquidSkill('hl quote BTC'));
+  console.log(await runHyperliquidSkill('dpro-hl quote BTC'));
 "
 ```
 
 ---
 
-## Features
+## Command model
 
-- **Multi-Account Management** — store and manage multiple trading accounts with encrypted key storage
-- **Market Data** — real-time quotes, order books, candlesticks, top movers, market overview, market listing
-- **Trading Modules** — spot, perps, and HIP-3 commands with exact-symbol routing
-- **Order Operations** — limit/market, cancel/cancel-all/cancel-by-cloid, builder approval
-- **Risk Controls** — leverage updates and isolated margin top-up (perps/HIP-3-perps only)
-- **Onchain Reads** — mids, metadata, holder distribution, liquidation map, leaderboard
-- **Multi-Input** — command style (`hl quote BTC`), slash style (`/hl quote BTC`), or natural language
-- **Secure Key Storage** — private keys are AES-encrypted at rest, never stored in plain text
-- **Zero Global Install** — runs as a skill inside agent environments, no `npm install -g` needed
+The skill is organized into four functional domains.
+
+### 1. Market reads
+
+```text
+dpro-hl quote BTC
+dpro-hl book ETH --levels 10
+dpro-hl candles SOL --interval 1h --last 20
+dpro-hl movers --top 10
+dpro-hl overview --top 10
+dpro-hl markets ls
+```
+
+### 2. Account management and account reads
+
+```text
+dpro-hl account ls
+dpro-hl account add-readonly <address> [alias]
+dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias] --password <password>
+dpro-hl account set-default <alias>
+dpro-hl account remove <alias>
+
+dpro-hl positions [alias|address]
+dpro-hl balances [alias|address]
+dpro-hl orders [alias|address]
+dpro-hl fills [alias|address] --limit 50
+dpro-hl portfolio [alias|address]
+```
+
+### 3. Trading namespaces
+
+Trading uses explicit market namespaces.
+
+#### Spot
+
+```text
+dpro-hl spot order limit buy 10 PURR 0.08
+dpro-hl spot order market sell 10 PURR --slippage 0.5
+dpro-hl spot order cancel <oid>
+dpro-hl spot order cancel-all
+dpro-hl spot order cancel-by-cloid PURR <cloid>
+```
+
+#### Perp
+
+```text
+dpro-hl perp order limit buy 0.001 BTC 50000
+dpro-hl perp order market sell 0.1 ETH --slippage 0.5
+dpro-hl perp order cancel <oid>
+dpro-hl perp order cancel-all
+dpro-hl perp order cancel-by-cloid BTC <cloid>
+dpro-hl perp order set-leverage BTC 10 --cross
+dpro-hl perp order topup-isolated BTC 100
+```
+
+#### HIP-3
+
+```text
+dpro-hl hip3 order limit buy 1 xyz:NVDA 120
+dpro-hl hip3 order market sell 1 xyz:NVDA --slippage 0.3
+dpro-hl hip3 order cancel <oid>
+dpro-hl hip3 order cancel-all
+dpro-hl hip3 order cancel-by-cloid xyz:NVDA <cloid>
+dpro-hl hip3 order set-leverage xyz:NVDA 5 --cross
+dpro-hl hip3 order topup-isolated xyz:NVDA 50
+```
+
+#### Builder approval
+
+```text
+dpro-hl approve-builder
+```
+
+### 4. Onchain reads
+
+```text
+dpro-hl onchain health
+dpro-hl onchain mids
+dpro-hl onchain spot-meta
+dpro-hl onchain perps-meta
+dpro-hl onchain spot-holders PURR --limit 5
+dpro-hl onchain spot-holder-counts
+dpro-hl onchain perp-holders BTC --limit 5 --order desc
+dpro-hl onchain liquidation-map xyz:TSLA
+dpro-hl onchain leaderboard --limit 10 --sort pnl_day --order desc
+```
 
 ---
 
-## Account Management
+## Trading safety notes
 
-Accounts are stored encrypted at `~/.config/hyperliquid-dpro/`.
+Live trading requires an API account and a password to decrypt stored private keys for write actions. The original README also documented `runtimeContext.password` and `--password <value>` support. In normal agent usage, prefer secure runtime input over exposing secrets in logs or shell history. fileciteturn7file0
 
-### Add Account
+Important rules:
 
-**Trading account** (requires API wallet from Hyperliquid):
+- use `spot`, `perp`, or `hip3` explicitly for live writes
+- do not assume symbol equivalence across namespaces
+- verify the exact tradable symbol with `dpro-hl markets ls`
+- treat market orders as bounded IOC-limit orders with slippage protection
+- leverage and isolated top-up apply only to supported perp-style markets
+- use read-only accounts only for monitoring, never for writes
 
-```bash
-hl account add-api <masterAddress> <agentPrivateKey> [alias]
+---
 
-# Example
-hl account add-api 0xYourMasterAddress 0xYourAgentPrivateKey myaccount
+## Account setup
+
+Accounts are stored under:
+
+```text
+~/.config/dpro-hl/
 ```
 
-To get an API wallet:
-1. Sign in via **https://app.hyperliquid.xyz/join/DPRO1**
-2. Go to **https://app.hyperliquid.xyz/API**
-3. Click **"Create API Wallet"**
-4. Copy the **private key** and note your **master wallet address**
+### Add a trading account
+
+```text
+dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]  --password <password>
+```
+
+To obtain a Hyperliquid API wallet:
+
+1. Sign in via `https://app.hyperliquid.xyz/join/DPRO1`
+2. Open `https://app.hyperliquid.xyz/API`
+3. Create an API wallet
+4. Copy the API wallet private key and note the master wallet address
 
 Quick validation:
 
-```bash
-hl account ls
-hl positions <alias>
+```text
+dpro-hl account ls
+dpro-hl positions <alias>
 ```
 
-**Read-only account** (monitoring only, no private key needed):
+### Add a read-only account
 
-```bash
-hl account add-readonly <address> [alias]
+```text
+dpro-hl account add-readonly <address> [alias]
 ```
 
-### Account Commands
-
-```bash
-hl account ls
-hl account add-readonly <address> [alias]
-hl account add-api <masterAddress> <agentPrivateKey> [alias]
-hl account set-default <alias>
-hl account remove <alias>
-hl positions [alias|address]
-hl balances [alias|address]
-hl orders [alias|address]
-hl fills [alias|address] --limit 50
-hl portfolio [alias|address]
-```
-
-Shows all configured accounts with alias, address, mode, and default status.
+Configured accounts show alias, address, mode, and default status. fileciteturn7file0
 
 ---
 
-## Market Information
+## Market data
 
-View market data without authentication.
+Market queries do not require authentication.
 
-### Get Quote
+### Quotes
 
-```bash
-hl quote BTC
-hl quote xyz:NVDA
+```text
+dpro-hl quote BTC
+dpro-hl quote xyz:NVDA
 ```
 
-Shows price, 24h change, funding rate, open interest, mark/oracle, and 24h volume when available.
+Typical quote output includes price, 24h change, funding, open interest, mark/oracle, and 24h volume when available. fileciteturn7file0
 
-### Get Order Book
+### Order book
 
-```bash
-hl book ETH
-hl book ETH --levels 20
+```text
+dpro-hl book ETH
+dpro-hl book ETH --levels 20
 ```
 
-### Get Candlesticks
+### Candles
 
-```bash
-hl candles BTC --interval 1h --last 48
+```text
+dpro-hl candles BTC --interval 1h --last 48
 ```
 
-Valid intervals: `1m`, `3m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `8h`, `12h`, `1d`, `3d`, `1w`, `1M`
+Valid intervals:
 
-### List All Markets
+`1m`, `3m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `8h`, `12h`, `1d`, `3d`, `1w`, `1M` fileciteturn7file0
 
-```bash
-hl markets ls
-```
+### Movers and overview
 
-Shows spot, perp, and namespaced markets with type and asset ID.
-
-### Top Movers and Overview
-
-```bash
-hl movers --top 10
-hl movers --side gainers
-hl movers --side losers
-hl overview --top 10
+```text
+dpro-hl movers --top 10
+dpro-hl movers --side gainers
+dpro-hl movers --side losers
+dpro-hl overview --top 10
 ```
 
 ---
 
-## Trading
+## Onchain analytics
 
-API account with private key required.
-
-### Place Limit Order
-
-```bash
-hl order limit buy  0.001 BTC 50000
-hl order limit sell 0.1 ETH 3500 --tif Gtc
-hl order limit buy  1 xyz:NVDA 120
-hl order limit buy  1 SOL 100 --reduce-only
-```
-
-| Option | Description |
-|--------|-------------|
-| `--tif <tif>` | Time-in-force: `Gtc` (default), `Ioc`, `Alo` |
-| `--reduce-only` | Reduce-only order |
-
-### Place Market Order
-
-```bash
-hl order market buy  0.001 BTC
-hl order market sell 0.1 ETH --slippage 0.5
-hl order market sell 1 xyz:NVDA --slippage 0.3
-```
-
-Market orders are executed as IOC limit orders with slippage protection.
-
-| Option | Description |
-|--------|-------------|
-| `--slippage <pct>` | Slippage percentage (default: 0.5%) |
-| `--reduce-only` | Reduce-only order |
-
-### Cancel and Builder Actions
-
-```bash
-# Cancel specific order
-hl order cancel <oid>
-
-# Cancel all open orders
-hl order cancel-all
-
-# Cancel with cloid
-hl order cancel-by-cloid xyz:NVDA <cloid>
-
-# Approve builder fee
-hl approve-builder
-```
-
-### Perp/HIP-3 Perp Risk Controls
-
-```bash
-# Cross margin (default)
-hl order set-leverage BTC 10
-hl order set-leverage xyz:NVDA 5 --cross
-
-# Isolated margin
-hl order set-leverage BTC 10 --isolated
-hl order topup-isolated BTC 100
-hl order topup-isolated xyz:NVDA 50
-```
-
-Note: leverage and isolated top-up are not supported on spot markets.
-
----
-
-## Onchain Reads
-
-Onchain read commands are available under `hl onchain ...`.
-
-```bash
-hl onchain health
-hl onchain mids
-hl onchain spot-meta
-hl onchain perps-meta
-hl onchain spot-holders PURR --limit 5
-hl onchain spot-holder-counts
-hl onchain perp-holders BTC --limit 5 --order desc
-hl onchain liquidation-map xyz:TSLA
-hl onchain leaderboard --limit 10 --sort pnl_day --order desc
-```
+Onchain reads are exposed under `dpro-hl onchain ...`.
 
 Notes:
-- On namespaced perp coins, normalization is `dex` lowercase + symbol uppercase (example: `XYZ:nvda` -> `xyz:NVDA`).
-- Onchain base URL is fixed in runtime: `https://api.d.pro/`.
+
+- namespaced perp coin normalization is `dex` lowercase + symbol uppercase
+- example: `XYZ:nvda` -> `xyz:NVDA`
+- the onchain base URL is fixed in runtime: `https://api.d.pro/` fileciteturn7file0
+
+Use cases:
+
+- health and connectivity checks
+- mids and metadata snapshots
+- spot / perp holder analysis
+- liquidation-map lookups
+- leaderboard queries
+
+For exact endpoint behavior and normalization rules, see `references/onchain.md`.
 
 ---
 
-## Global Flags
+## Global flags
 
 | Flag | Description |
-|--------|-------------|
+|------|-------------|
 | `--json` | Output raw JSON instead of formatted text |
 | `--account <alias>` | Use a specific account for this command |
 | `--password <value>` | Provide master password inline for write actions |
 
----
-
-## Input Styles
-
-Three equivalent ways to invoke:
-
-```bash
-hl quote BTC                       # Command style
-/hl quote BTC                      # Slash style (in agent chat)
-BTC price                          # English natural language
-SOL 1h candles last 48             # Candles
-buy 0.1 BTC                        # Natural language trading
-short 0.1 ETH                      # Natural language trading
-```
+If possible, prefer secure runtime context for passwords instead of inline command arguments. fileciteturn7file0
 
 ---
 
-## Examples
+## Input styles
 
-### Quick Market and Onchain Check
+Three equivalent invocation styles are supported.
 
-```bash
-# Check BTC price and funding
-hl quote BTC
-
-# See top movers
-hl movers --top 5
-
-# Check order book depth
-hl book ETH --levels 10
-
-# Check onchain mids
-hl onchain mids
-```
-
-### Trading Workflow
-
-```bash
-# 1. Check available markets
-hl markets ls
-
-# 2. Check your balance
-hl balances
-
-# 3. Set leverage
-hl order set-leverage BTC 5
-
-# 4. Place a limit order
-hl order limit buy 0.001 BTC 50000
-
-# 5. Check open orders
-hl orders
-
-# 6. Check positions
-hl positions
-```
-
-### HIP-3 Workflow
-
-```bash
-# Discover exact symbol first
-hl markets ls
-
-# HIP-3 quote and trading
-hl quote xyz:NVDA
-hl order limit buy 1 xyz:NVDA 120
-hl order market sell 1 xyz:NVDA --slippage 0.5
-```
-
-### Scripting with JSON Output
-
-```bash
-# Get raw JSON for automation
-hl quote BTC --json
-hl positions --json
-hl onchain leaderboard --json
+```text
+dpro-hl quote BTC
+/dpro-hl quote BTC
+BTC price
+SOL 1h candles last 48
+dpro-hl perp order market buy 0.1 BTC
+dpro-hl perp order market sell 0.1 ETH
 ```
 
 ---
 
-## Configuration
+## Example workflows
 
-### Local Storage
+### Market + onchain check
 
-| Path | Description |
-|------|-------------|
-| `~/.config/hyperliquid-dpro/config.json` | Account list, default account, network setting |
-| `~/.config/hyperliquid-dpro/keys.enc` | AES-encrypted agent private keys |
+```text
+dpro-hl quote BTC
+dpro-hl movers --top 5
+dpro-hl book ETH --levels 10
+dpro-hl onchain mids
+```
 
-Private keys are **never stored in plain text**. A master password is required to encrypt/decrypt keys.
+### Perp trading flow
 
-### Runtime Context
+```text
+dpro-hl markets ls
+dpro-hl balances
+dpro-hl perp order set-leverage BTC 5
+dpro-hl perp order limit buy 0.001 BTC 50000
+dpro-hl orders
+dpro-hl positions
+```
 
-When calling programmatically, pass options via `runtimeContext`:
+### HIP-3 flow
+
+```text
+dpro-hl markets ls
+dpro-hl quote xyz:NVDA
+dpro-hl hip3 order limit buy 1 xyz:NVDA 120
+dpro-hl hip3 order market sell 1 xyz:NVDA --slippage 0.5
+```
+
+### JSON automation
+
+```text
+dpro-hl quote BTC --json
+dpro-hl positions --json
+dpro-hl onchain leaderboard --json
+```
+
+---
+
+## Runtime context
+
+When calling `runHyperliquidSkill(...)`, the runtime context may include:
 
 | Key | Type | Description |
 |-----|------|-------------|
 | `password` | string | Master password to decrypt stored private keys |
-| `network` | `'mainnet'` \| `'testnet'` | Target network (default: mainnet) |
+| `network` | `'mainnet' \| 'testnet'` | Target network (default: mainnet) |
+| `autoUpgrade` | boolean | Enable or disable auto-upgrade for this invocation |
+| `autoUpgradeTimeoutMs` | number | Timeout budget in milliseconds for one upgrade pass |
+| `autoUpgradeProvider` | `'auto' \| 'git' \| 'clawhub' \| 'off'` | Select provider routing for this invocation |
+| `autoUpgradeCheckIntervalMs` | number | Clawhub provider check interval in milliseconds |
+| `autoUpgradeClawhubCmd` | string | Clawhub command alias |
+| `autoUpgradeDryRun` | boolean | Check-only mode for debugging |
+| `autoUpgradeDisableNpmInstall` | boolean | Skip `npm install` after a successful pull |
+
+Environment overrides:
+
+- `DPRO_HL_AUTO_UPGRADE=0`
+- `DPRO_HL_AUTO_UPGRADE_TIMEOUT_MS=2000`
+- `DPRO_HL_AUTO_UPGRADE_PROVIDER=auto|git|clawhub|off`
+- `DPRO_HL_AUTO_UPGRADE_CHECK_INTERVAL_MS=900000`
+- `DPRO_HL_AUTO_UPGRADE_CLAWHUB_CMD=clawhub`
+- `DPRO_HL_AUTO_UPGRADE_DISABLE_NPM=1`
+
+Behavior:
+
+- runs on each `runHyperliquidSkill(...)` invocation
+- `git` installs use `git pull --ff-only` and `npm install --silent` when remote is ahead
+- `clawhub` installs run `clawhub update <skill-slug>` on the configured interval
+- failures and timeouts surface as a warning line without blocking the requested command fileciteturn7file0
 
 ---
 
-## Project Structure
+## Local storage
 
-```
+| Path | Description |
+|------|-------------|
+| `~/.config/dpro-hl/config.json` | Account list, default account, network setting |
+| `~/.config/dpro-hl/keys.enc` | AES-encrypted agent private keys |
+| `~/.config/dpro-hl/upgrade-state.json` | Auto-upgrade state and warning dedupe metadata |
+
+Private keys are never stored in plain text. A master password is required to encrypt and decrypt keys. fileciteturn7file0
+
+---
+
+## Project structure
+
+```text
 scripts/
 ├── entry.mjs               # Single entry point: runHyperliquidSkill()
+├── auto-upgrade.mjs        # Per-invocation auto-upgrade checks
 ├── parser.mjs              # Input parsing (command + natural language)
 ├── router.mjs              # AST -> command handler dispatch
 ├── format.mjs              # Structured result -> text output
@@ -473,20 +506,35 @@ scripts/
 └── tests/                  # Unit tests (node:test)
 ```
 
+---
+
 ## Development
 
 ```bash
-# Smoke test
 node --input-type=module -e "
   import { runHyperliquidSkill } from './scripts/entry.mjs';
-  console.log(await runHyperliquidSkill('hl quote BTC'));
+  console.log(await runHyperliquidSkill('dpro-hl quote BTC'));
 "
 ```
+
+---
+
+## References
+
+- `SKILL.md`
+- `references/commands.md`
+- `references/onchain.md`
+- `references/troubleshooting.md`
+
+---
 
 ## Referral
 
 Join Hyperliquid via:
-- https://app.hyperliquid.xyz/join/DPRO1
+
+- `https://app.hyperliquid.xyz/join/DPRO1`
+
+---
 
 ## License
 

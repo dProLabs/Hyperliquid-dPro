@@ -74,7 +74,7 @@ async function perpsMeta(parsed, ctx) {
 }
 
 async function spotHolders(parsed, ctx) {
-  const coin = parseCoin(parsed.target, 'Usage: hl onchain spot-holders <coin> [--page N] [--limit N]');
+  const coin = parseCoin(parsed.target, 'Usage: dpro-hl onchain spot-holders <coin> [--page N] [--limit N]');
   const query = {
     coin,
     ...parsePageLimit(parsed.flags),
@@ -91,7 +91,7 @@ async function spotHolderCounts(parsed, ctx) {
 }
 
 async function perpHolders(parsed, ctx) {
-  const coin = parseCoin(parsed.target, 'Usage: hl onchain perp-holders <coin> [--sortBy field] [--order asc|desc] [--page N] [--limit N]');
+  const coin = parseCoin(parsed.target, 'Usage: dpro-hl onchain perp-holders <coin> [--sortBy field] [--order asc|desc] [--page N] [--limit N]');
   const query = {
     coin,
     sortBy: parsed.flags?.sortBy,
@@ -104,7 +104,7 @@ async function perpHolders(parsed, ctx) {
 }
 
 async function liquidationMap(parsed, ctx) {
-  const coin = parseCoin(parsed.target, 'Usage: hl onchain liquidation-map <coin>');
+  const coin = parseCoin(parsed.target, 'Usage: dpro-hl onchain liquidation-map <coin>');
   const query = { coin };
   const path = '/api/v1/hl/perp/liquidation-map';
   const payload = await getOnchain(path, query, ctx);

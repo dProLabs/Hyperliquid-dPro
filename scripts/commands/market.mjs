@@ -22,14 +22,14 @@ async function getAssetNotFoundError(coin, opts = {}) {
   const hints = [];
   if (related.length) hints.push(`Related symbols: ${related.join(', ')}.`);
   if (String(coin).includes(':') || related.some(s => s.includes(':'))) {
-    hints.push('AAPL and xyz:AAPL are different assets; use the exact coin from "hl markets ls".');
+    hints.push('AAPL and xyz:AAPL are different assets; use the exact coin from "dpro-hl markets ls".');
   }
   return assetNotFound(coin, hints.join(' '));
 }
 
 async function quote(parsed, ctx) {
   const coin = parsed.target;
-  if (!coin) throw inputError('Usage: hl quote <coin>');
+  if (!coin) throw inputError('Usage: dpro-hl quote <coin>');
   const isTestnet = ctx?.network === 'testnet';
   const netOpts = { isTestnet };
 
@@ -61,7 +61,7 @@ async function quote(parsed, ctx) {
 
 async function book(parsed, ctx) {
   const coin = parsed.target;
-  if (!coin) throw inputError('Usage: hl book <coin>');
+  if (!coin) throw inputError('Usage: dpro-hl book <coin>');
   const isTestnet = ctx?.network === 'testnet';
   const netOpts = { isTestnet };
 
@@ -85,7 +85,7 @@ async function book(parsed, ctx) {
 
 async function candles(parsed, ctx) {
   const coin = parsed.target;
-  if (!coin) throw inputError('Usage: hl candles <coin> --interval <iv> [--last <n>]');
+  if (!coin) throw inputError('Usage: dpro-hl candles <coin> --interval <iv> [--last <n>]');
   const isTestnet = ctx?.network === 'testnet';
   const netOpts = { isTestnet };
 

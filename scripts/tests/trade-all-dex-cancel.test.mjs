@@ -34,7 +34,7 @@ describe('trade cancel all-dex behavior', () => {
     });
 
     const out = await trade.cancel(
-      { target: '77', flags: {} },
+      { marketType: 'hip3', target: '77', flags: {} },
       { network: 'mainnet' },
     );
 
@@ -75,7 +75,7 @@ describe('trade cancel all-dex behavior', () => {
       },
     });
 
-    const out = await trade.cancelAll({ flags: {} }, { network: 'mainnet' });
+    const out = await trade.cancelAll({ marketType: 'hip3', flags: {} }, { network: 'mainnet' });
     assert.equal(out.data.count, 2);
     assert.deepEqual(sentCancels, [
       { asset: 120001, oid: 1 },
@@ -106,7 +106,7 @@ describe('trade cancel all-dex behavior', () => {
     });
 
     const out = await trade.market(
-      { target: 'XYZ:NVDA', args: { side: 'sell', size: '0.1' }, flags: {} },
+      { marketType: 'hip3', target: 'XYZ:NVDA', args: { side: 'sell', size: '0.1' }, flags: {} },
       { network: 'mainnet' },
     );
 

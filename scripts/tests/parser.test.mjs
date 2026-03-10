@@ -4,43 +4,51 @@ import { parseInput } from '../parser.mjs';
 
 describe('parser', () => {
   describe('prefix stripping', () => {
-    it('strips "hl " prefix', () => {
-      const r = parseInput('hl quote BTC');
+    it('strips "dpro-hl " prefix', () => {
+      const r = parseInput('dpro-hl quote BTC');
       assert.equal(r.domain, 'market');
       assert.equal(r.action, 'quote');
       assert.equal(r.target, 'BTC');
     });
 
-    it('strips "/hl " prefix', () => {
-      const r = parseInput('/hl book ETH');
+    it('strips "/dpro-hl " prefix', () => {
+      const r = parseInput('/dpro-hl book ETH');
       assert.equal(r.domain, 'market');
       assert.equal(r.action, 'book');
       assert.equal(r.target, 'ETH');
     });
 
-    it('handles bare "hl" as help', () => {
-      const r = parseInput('hl');
+    it('handles bare "dpro-hl" as help', () => {
+      const r = parseInput('dpro-hl');
       assert.equal(r.domain, 'help');
+    });
+
+    it('rejects legacy "hl" prefix', () => {
+      assert.throws(() => parseInput('hl quote BTC'), /Could not parse input/i);
+    });
+
+    it('rejects legacy "/hl" prefix', () => {
+      assert.throws(() => parseInput('/hl quote BTC'), /Could not parse input/i);
     });
   });
 
   describe('market commands', () => {
     it('parses quote', () => {
-      const r = parseInput('hl quote SOL');
+      const r = parseInput('dpro-hl quote SOL');
       assert.equal(r.domain, 'market');
       assert.equal(r.action, 'quote');
       assert.equal(r.target, 'SOL');
     });
 
     it('parses book with levels flag', () => {
-      const r = parseInput('hl book ETH --levels 5');
+      const r = parseInput('dpro-hl book ETH --levels 5');
       assert.equal(r.action, 'book');
       assert.equal(r.target, 'ETH');
       assert.equal(r.flags.levels, '5');
     });
 
     it('parses candles with interval and last', () => {
-      const r = parseInput('hl candles BTC --interval 1h --last 48');
+      const r = parseInput('dpro-hl candles BTC --interval 1h --last 48');
       assert.equal(r.action, 'candles');
       assert.equal(r.target, 'BTC');
       assert.equal(r.flags.interval, '1h');
@@ -48,14 +56,14 @@ describe('parser', () => {
     });
 
     it('parses movers with side and top', () => {
-      const r = parseInput('hl movers --side gainers --top 5');
+      const r = parseInput('dpro-hl movers --side gainers --top 5');
       assert.equal(r.action, 'movers');
       assert.equal(r.flags.side, 'gainers');
       assert.equal(r.flags.top, '5');
     });
 
     it('parses markets ls', () => {
-      const r = parseInput('hl markets ls');
+      const r = parseInput('dpro-hl markets ls');
       assert.equal(r.domain, 'market');
       assert.equal(r.action, 'markets-ls');
     });
@@ -63,27 +71,27 @@ describe('parser', () => {
 
   describe('account commands', () => {
     it('parses account ls', () => {
-      const r = parseInput('hl account ls');
+      const r = parseInput('dpro-hl account ls');
       assert.equal(r.domain, 'account');
       assert.equal(r.action, 'ls');
     });
 
     it('parses account add-readonly', () => {
-      const r = parseInput('hl account add-readonly 0x1234567890abcdef1234567890abcdef12345678 myalias');
+      const r = parseInput('dpro-hl account add-readonly 0x1234567890abcdef1234567890abcdef12345678 myalias');
       assert.equal(r.action, 'add-readonly');
       assert.equal(r.target, '0x1234567890abcdef1234567890abcdef12345678');
       assert.deepEqual(r.args.rest, ['myalias']);
     });
 
     it('parses positions shortcut', () => {
-      const r = parseInput('hl positions main');
+      const r = parseInput('dpro-hl positions main');
       assert.equal(r.domain, 'account');
       assert.equal(r.action, 'positions');
       assert.equal(r.target, 'main');
     });
 
     it('parses fills with limit flag', () => {
-      const r = parseInput('hl fills --limit 50');
+      const r = parseInput('dpro-hl fills --limit 50');
       assert.equal(r.domain, 'account');
       assert.equal(r.action, 'fills');
       assert.equal(r.flags.limit, '50');
@@ -92,77 +100,87 @@ describe('parser', () => {
 
   describe('trade commands', () => {
     it('parses limit buy', () => {
-      const r = parseInput('hl order limit buy 0.01 BTC 50000');
+      const r = parseInput('dpro-hl perp order limit buy 0.01 BTC 50000');
       assert.equal(r.domain, 'trade');
       assert.equal(r.action, 'limit');
+      assert.equal(r.marketType, 'perp');
       assert.equal(r.target, 'BTC');
       assert.equal(r.args.side, 'buy');
       assert.equal(r.args.size, '0.01');
       assert.equal(r.args.price, '50000');
     });
 
-    it('parses market sell', () => {
-      const r = parseInput('hl order market sell 1.5 ETH');
+    it('parses spot market sell', () => {
+      const r = parseInput('dpro-hl spot order market sell 1.5 ETH');
       assert.equal(r.action, 'market');
+      assert.equal(r.marketType, 'spot');
       assert.equal(r.args.side, 'sell');
       assert.equal(r.args.size, '1.5');
       assert.equal(r.target, 'ETH');
     });
 
-    it('parses market order with namespaced coin', () => {
-      const r = parseInput('hl order market buy 1 xyz:AAPL');
+    it('parses hip3 market order with namespaced coin', () => {
+      const r = parseInput('dpro-hl hip3 order market buy 1 xyz:AAPL');
       assert.equal(r.action, 'market');
+      assert.equal(r.marketType, 'hip3');
       assert.equal(r.args.side, 'buy');
       assert.equal(r.target, 'XYZ:AAPL');
     });
 
     it('parses cancel', () => {
-      const r = parseInput('hl order cancel 12345');
+      const r = parseInput('dpro-hl perp order cancel 12345');
       assert.equal(r.action, 'cancel');
+      assert.equal(r.marketType, 'perp');
       assert.equal(r.target, '12345');
     });
 
     it('parses cancel-all', () => {
-      const r = parseInput('hl order cancel-all');
+      const r = parseInput('dpro-hl spot order cancel-all');
       assert.equal(r.action, 'cancel-all');
+      assert.equal(r.marketType, 'spot');
     });
 
     it('parses set-leverage', () => {
-      const r = parseInput('hl order set-leverage BTC 10 --cross');
+      const r = parseInput('dpro-hl perp order set-leverage BTC 10 --cross');
       assert.equal(r.action, 'set-leverage');
+      assert.equal(r.marketType, 'perp');
       assert.equal(r.target, 'BTC');
       assert.equal(r.args.leverage, '10');
       assert.equal(r.flags.cross, true);
     });
 
     it('parses limit with tif and reduce-only', () => {
-      const r = parseInput('hl order limit sell 0.5 ETH 3500 --tif Alo --reduce-only');
+      const r = parseInput('dpro-hl perp order limit sell 0.5 ETH 3500 --tif Alo --reduce-only');
       assert.equal(r.args.side, 'sell');
       assert.equal(r.flags.tif, 'Alo');
       assert.equal(r.flags['reduce-only'], true);
     });
 
     it('parses approve-builder', () => {
-      const r = parseInput('hl approve-builder');
+      const r = parseInput('dpro-hl approve-builder');
       assert.equal(r.domain, 'trade');
       assert.equal(r.action, 'approve-builder');
     });
 
     it('throws on missing side', () => {
-      assert.throws(() => parseInput('hl order limit 0.01 BTC 50000'), /side/i);
+      assert.throws(() => parseInput('dpro-hl perp order limit 0.01 BTC 50000'), /side/i);
+    });
+
+    it('rejects legacy order command', () => {
+      assert.throws(() => parseInput('dpro-hl order limit buy 0.01 BTC 50000'), /no longer supported/i);
     });
   });
 
   describe('onchain commands', () => {
     it('parses onchain health', () => {
-      const r = parseInput('hl onchain health');
+      const r = parseInput('dpro-hl onchain health');
       assert.equal(r.domain, 'onchain');
       assert.equal(r.action, 'health');
       assert.equal(r.target, null);
     });
 
     it('parses onchain spot-holders with coin', () => {
-      const r = parseInput('hl onchain spot-holders purr --limit 5');
+      const r = parseInput('dpro-hl onchain spot-holders purr --limit 5');
       assert.equal(r.domain, 'onchain');
       assert.equal(r.action, 'spot-holders');
       assert.equal(r.target, 'PURR');
@@ -170,7 +188,7 @@ describe('parser', () => {
     });
 
     it('parses onchain perp-holders with flags', () => {
-      const r = parseInput('hl onchain perp-holders xyz:NVDA --order desc --page 2');
+      const r = parseInput('dpro-hl onchain perp-holders xyz:NVDA --order desc --page 2');
       assert.equal(r.domain, 'onchain');
       assert.equal(r.action, 'perp-holders');
       assert.equal(r.target, 'XYZ:NVDA');
@@ -209,21 +227,18 @@ describe('parser', () => {
       assert.equal(r.action, 'positions');
     });
 
-    it('parses buy NL', () => {
-      const r = parseInput('\u4e70\u5165 0.5 ETH');
-      assert.equal(r.domain, 'trade');
-      assert.equal(r.action, 'market');
-      assert.equal(r.args.side, 'buy');
-      assert.equal(r.args.size, '0.5');
-      assert.equal(r.target, 'ETH');
+    it('rejects buy NL without namespace', () => {
+      assert.throws(
+        () => parseInput('\u4e70\u5165 0.5 ETH'),
+        /must specify a market namespace/i,
+      );
     });
 
-    it('parses buy NL with namespaced coin', () => {
-      const r = parseInput('buy 1 xyz:AAPL');
-      assert.equal(r.domain, 'trade');
-      assert.equal(r.action, 'market');
-      assert.equal(r.args.side, 'buy');
-      assert.equal(r.target, 'XYZ:AAPL');
+    it('rejects buy NL with namespaced coin when namespace missing', () => {
+      assert.throws(
+        () => parseInput('buy 1 xyz:AAPL'),
+        /must specify a market namespace/i,
+      );
     });
 
     it('throws on unparseable input', () => {

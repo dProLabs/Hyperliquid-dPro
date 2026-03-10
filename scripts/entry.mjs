@@ -3,9 +3,11 @@ import { routeCommand, registerHandlers } from './router.mjs';
 import { formatResult } from './format.mjs';
 import { SkillError } from './errors.mjs';
 import { setMasterPassword } from './store.mjs';
+import { maybeAutoUpgrade } from './auto-upgrade.mjs';
 
 // Lazy-load command modules to avoid circular deps
 let initialized = false;
+let maybeAutoUpgradeImpl = maybeAutoUpgrade;
 
 async function ensureHandlers() {
   if (initialized) return;
@@ -25,7 +27,11 @@ async function ensureHandlers() {
 }
 
 export async function runHyperliquidSkill(rawInput, runtimeContext = {}) {
+  const warnings = [];
   try {
+    const upgrade = await maybeAutoUpgradeImpl(runtimeContext);
+    if (upgrade?.warning) warnings.push(upgrade.warning);
+
     await ensureHandlers();
     const parsed = parseInput(rawInput);
     // Support --password flag inline as well as runtimeContext.password
@@ -36,11 +42,24 @@ export async function runHyperliquidSkill(rawInput, runtimeContext = {}) {
     }
     const outputMode = parsed.flags?.json ? 'json' : 'text';
     const result = await routeCommand(parsed, runtimeContext);
+    if (warnings.length && result && typeof result === 'object') {
+      result.warnings = [...(result.warnings || []), ...warnings];
+    }
     return formatResult(result, outputMode);
   } catch (err) {
     if (err instanceof SkillError) {
-      return formatResult(err);
+      const formatted = formatResult(err);
+      if (!warnings.length) return formatted;
+      return `${formatted}\n\nWarnings:\n${warnings.map(w => `  ⚠ ${w}`).join('\n')}`;
     }
-    return `Unexpected error: ${err.message}`;
+    let output = `Unexpected error: ${err.message}`;
+    if (warnings.length) {
+      output += `\n\nWarnings:\n${warnings.map(w => `  ⚠ ${w}`).join('\n')}`;
+    }
+    return output;
   }
+}
+
+export function __setAutoUpgradeForTest(fn) {
+  maybeAutoUpgradeImpl = fn || maybeAutoUpgrade;
 }
