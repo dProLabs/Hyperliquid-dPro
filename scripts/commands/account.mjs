@@ -5,7 +5,7 @@ import { findMarket } from '../resolvers/market-resolver.mjs';
 import { assertAddress, assertPrivateKey } from '../utils/validate.mjs';
 import { inputError } from '../errors.mjs';
 import { DEFAULT_FILL_LIMIT } from '../constants.mjs';
-import { clearCachedPassword } from '../password-cache.mjs';
+import { clearCachedPasswords } from '../password-cache.mjs';
 
 const defaultDeps = {
   store,
@@ -90,16 +90,16 @@ async function addApi(parsed, ctx) {
   const alias = parsed.args?.rest?.[1];
 
   if (!masterAddress || !agentPrivateKey) {
-    throw deps.inputError('Usage: dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]  --password <password>');
+    throw deps.inputError('Usage: dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]  --api-password <password>');
   }
 
   deps.assertAddress(masterAddress, 'master address');
   const cleanKey = deps.assertPrivateKey(agentPrivateKey);
 
-  // Set master password from context if provided
-  if (ctx?.password) deps.store.setMasterPassword(ctx.password);
-  if (!deps.store.getMasterPassword()) {
-    throw deps.inputError('Master password required. Pass via runtimeContext.password or set it first.');
+  // Set API wallet password from context if provided
+  if (ctx?.apiPassword) deps.store.setApiWalletPassword(ctx.apiPassword);
+  if (!deps.store.getApiWalletPassword()) {
+    throw deps.inputError('API wallet password required. Pass via runtimeContext.apiPassword or set it first.');
   }
 
   const agentAddress = await deriveAddress(cleanKey);
@@ -115,9 +115,9 @@ async function addApi(parsed, ctx) {
 }
 
 function ensurePassword(ctx) {
-  if (ctx?.password) deps.store.setMasterPassword(ctx.password);
+  if (ctx?.masterPassword) deps.store.setMasterPassword(ctx.masterPassword);
   if (!deps.store.getMasterPassword()) {
-    throw deps.inputError('Master password required. Pass via runtimeContext.password or set it first.');
+    throw deps.inputError('Master wallet password required. Pass via runtimeContext.masterPassword or set it first.');
   }
 }
 
@@ -125,7 +125,7 @@ async function addMaster(parsed, ctx) {
   const masterAddress = parsed.target;
   const masterPrivateKey = parsed.args?.rest?.[0];
   if (!masterAddress || !masterPrivateKey) {
-    throw deps.inputError('Usage: dpro-hl account add-master <masterAddress> <masterPrivKey>  --password <password>');
+    throw deps.inputError('Usage: dpro-hl account add-master <masterAddress> <masterPrivKey>  --master-password <password>');
   }
   deps.assertAddress(masterAddress, 'master address');
   const cleanKey = deps.assertPrivateKey(masterPrivateKey);
@@ -138,7 +138,7 @@ async function updateMaster(parsed, ctx) {
   const masterAddress = parsed.target;
   const masterPrivateKey = parsed.args?.rest?.[0];
   if (!masterAddress || !masterPrivateKey) {
-    throw deps.inputError('Usage: dpro-hl account update-master <masterAddress> <masterPrivKey>  --password <password>');
+    throw deps.inputError('Usage: dpro-hl account update-master <masterAddress> <masterPrivKey>  --master-password <password>');
   }
   deps.assertAddress(masterAddress, 'master address');
   const cleanKey = deps.assertPrivateKey(masterPrivateKey);
@@ -150,7 +150,7 @@ async function updateMaster(parsed, ctx) {
 async function removeMaster(parsed, ctx) {
   const masterAddress = parsed.target;
   if (!masterAddress) {
-    throw deps.inputError('Usage: dpro-hl account remove-master <masterAddress>  --password <password>');
+    throw deps.inputError('Usage: dpro-hl account remove-master <masterAddress>  --master-password <password>');
   }
   deps.assertAddress(masterAddress, 'master address');
   ensurePassword(ctx);
@@ -183,7 +183,7 @@ async function setDefault(parsed) {
 }
 
 async function clearPasswordCache() {
-  clearCachedPassword();
+  clearCachedPasswords();
   return { ok: true, type: 'password-cache-cleared', data: { cleared: true } };
 }
 

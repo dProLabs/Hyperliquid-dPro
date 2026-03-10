@@ -21,50 +21,110 @@ function getCachePath(env = process.env) {
   return join(getConfigDir(), PASSWORD_CACHE_FILE);
 }
 
-export function loadCachedPassword(now = Date.now(), env = process.env) {
+function loadPayload(filePath) {
+  if (!existsSync(filePath)) return null;
+  const raw = readFileSync(filePath, 'utf8');
+  if (!raw?.trim()) return null;
+  return JSON.parse(raw);
+}
+
+function isExpired(now, expiresAt) {
+  return !Number.isFinite(expiresAt) || now >= expiresAt;
+}
+
+function savePayload(filePath, payload) {
+  mkdirSync(dirname(filePath), { recursive: true });
+  writeFileSync(filePath, JSON.stringify(payload), { encoding: 'utf8', mode: 0o600 });
+  chmodSync(filePath, 0o600);
+}
+
+export function loadCachedApiPassword(now = Date.now(), env = process.env) {
   if (!isCacheEnabled(env)) return null;
   const filePath = getCachePath(env);
   try {
-    if (!existsSync(filePath)) return null;
-    const raw = readFileSync(filePath, 'utf8');
-    if (!raw?.trim()) return null;
-    const payload = JSON.parse(raw);
-    const password = payload?.password;
-    const expiresAt = Number(payload?.expiresAt);
-    if (typeof password !== 'string' || !Number.isFinite(expiresAt)) {
-      unlinkSync(filePath);
-      return null;
+    const payload = loadPayload(filePath);
+    if (!payload) return null;
+
+    // Backward compatibility: old single-password cache.
+    if (typeof payload.password === 'string') {
+      const expiresAt = Number(payload?.expiresAt);
+      if (isExpired(now, expiresAt)) {
+        unlinkSync(filePath);
+        return null;
+      }
+      return payload.password;
     }
-    if (now >= expiresAt) {
-      unlinkSync(filePath);
-      return null;
-    }
-    return password;
+
+    const apiPassword = payload?.apiPassword;
+    const apiExpiresAt = Number(payload?.apiExpiresAt);
+    if (typeof apiPassword !== 'string' || isExpired(now, apiExpiresAt)) return null;
+    return apiPassword;
   } catch {
     return null;
   }
 }
 
-export function saveCachedPassword(password, now = Date.now(), env = process.env) {
+export function loadCachedMasterPassword(now = Date.now(), env = process.env) {
+  if (!isCacheEnabled(env)) return null;
+  const filePath = getCachePath(env);
+  try {
+    const payload = loadPayload(filePath);
+    if (!payload) return null;
+
+    // Backward compatibility: old single-password cache.
+    if (typeof payload.password === 'string') {
+      const expiresAt = Number(payload?.expiresAt);
+      if (isExpired(now, expiresAt)) {
+        unlinkSync(filePath);
+        return null;
+      }
+      return payload.password;
+    }
+
+    const masterPassword = payload?.masterPassword;
+    const masterExpiresAt = Number(payload?.masterExpiresAt);
+    if (typeof masterPassword !== 'string' || isExpired(now, masterExpiresAt)) return null;
+    return masterPassword;
+  } catch {
+    return null;
+  }
+}
+
+export function saveCachedApiPassword(password, now = Date.now(), env = process.env) {
   if (!isCacheEnabled(env)) return;
   if (typeof password !== 'string' || !password) return;
   const filePath = getCachePath(env);
   const ttlSec = parseTtlSec(env);
-  const payload = {
-    password,
-    savedAt: now,
-    expiresAt: now + ttlSec * 1000,
-  };
+  const expiresAt = now + ttlSec * 1000;
   try {
-    mkdirSync(dirname(filePath), { recursive: true });
-    writeFileSync(filePath, JSON.stringify(payload), { encoding: 'utf8', mode: 0o600 });
-    chmodSync(filePath, 0o600);
+    const payload = loadPayload(filePath) || {};
+    payload.apiPassword = password;
+    payload.apiSavedAt = now;
+    payload.apiExpiresAt = expiresAt;
+    savePayload(filePath, payload);
   } catch {
     // Cache write should never block command execution.
   }
 }
 
-export function clearCachedPassword(env = process.env) {
+export function saveCachedMasterPassword(password, now = Date.now(), env = process.env) {
+  if (!isCacheEnabled(env)) return;
+  if (typeof password !== 'string' || !password) return;
+  const filePath = getCachePath(env);
+  const ttlSec = parseTtlSec(env);
+  const expiresAt = now + ttlSec * 1000;
+  try {
+    const payload = loadPayload(filePath) || {};
+    payload.masterPassword = password;
+    payload.masterSavedAt = now;
+    payload.masterExpiresAt = expiresAt;
+    savePayload(filePath, payload);
+  } catch {
+    // Cache write should never block command execution.
+  }
+}
+
+export function clearCachedPasswords(env = process.env) {
   const filePath = getCachePath(env);
   try {
     if (existsSync(filePath)) unlinkSync(filePath);

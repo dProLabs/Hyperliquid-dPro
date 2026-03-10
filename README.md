@@ -148,7 +148,7 @@ console.log(quote);
 // Live trading
 const order = await runHyperliquidSkill(
   'dpro-hl perp order limit buy 0.01 BTC 50000',
-  { password: 'yourMasterPassword' }
+  { apiPassword: 'yourApiWalletPassword' }
 );
 console.log(order);
 ```
@@ -185,7 +185,7 @@ For failure diagnosis and fixes, use:
 - spot/perp transfer uses top-level command: `dpro-hl transfer <usd> [--to perp|spot]`
 - verify exact tradable symbols with `dpro-hl markets ls`
 - use API accounts (not read-only) for write actions
-- configure a master key for transfer signing: `dpro-hl account add-master <masterAddress> <masterPrivKey> --password <password>`
+- configure a master key for transfer signing: `dpro-hl account add-master <masterAddress> <masterPrivKey> --master-password <password>`
 - prefer runtime password input over inline password flags
 - onchain reads are read-only and use fixed base URL `https://api.d.pro/`
 
@@ -209,7 +209,7 @@ dpro-hl markets ls
 dpro-hl balances
 dpro-hl perp order set-leverage BTC 5
 dpro-hl perp order limit buy 0.001 BTC 50000
-dpro-hl account add-master 0x<masterAddress> 0x<masterPrivKey> --password <password>
+dpro-hl account add-master 0x<masterAddress> 0x<masterPrivKey> --master-password <password>
 dpro-hl transfer 5 --to perp --account main
 dpro-hl orders
 dpro-hl positions
@@ -240,7 +240,8 @@ When calling `runHyperliquidSkill(...)`, the runtime context may include:
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `password` | string | Master password to decrypt stored private keys |
+| `apiPassword` | string | API-wallet password used to decrypt API private keys |
+| `masterPassword` | string | Master-wallet password used to decrypt master private keys |
 | `network` | `'mainnet' \| 'testnet'` | Target network (default: mainnet) |
 | `autoUpgrade` | boolean | Enable or disable auto-upgrade for this invocation |
 | `autoUpgradeTimeoutMs` | number | Timeout budget in milliseconds for one upgrade pass |

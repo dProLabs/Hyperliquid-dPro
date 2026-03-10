@@ -282,7 +282,7 @@ For `dpro-hl account ls` interpretation:
 - treat `MasterAddress` as the master account address and `AgentAddress` as the API sub-account address
 - if `MasterKey=no`, explain this as missing master-key mapping for the existing account, not a missing "master account" entry
 - if guiding the user to fix `MasterKey=no` with `dpro-hl account add-master ...`, explicitly say this flow needs `master-wallet password` first
-- request password input through `password=<YOUR_PASSWORD>` or `--password <YOUR_PASSWORD>` before constructing the `add-master` command
+- request password input through `--master-password <YOUR_PASSWORD>` (or runtime `masterPassword=<YOUR_PASSWORD>`) before constructing the `add-master` command
 
 ### Write path
 Write operations require:
@@ -299,7 +299,7 @@ If account state is unknown before a write, check `dpro-hl account ls` first.
 
 ## Password and secret policy
 
-If the runtime supports `runtimeContext.password`, prefer that.
+If the runtime supports `runtimeContext.apiPassword` / `runtimeContext.masterPassword`, prefer those.
 Otherwise use the canonical secure command path supported by the implementation.
 
 Credential split rules:
@@ -314,13 +314,13 @@ Password session cache is enabled by default for this skill runtime:
 - users may clear cache explicitly with `dpro-hl account clear-password-cache`
 
 When password is missing for a write/decrypt flow, explicitly ask the user to provide it in one of these forms:
-- `password=<YOUR_PASSWORD>` (chat/runtime input form)
-- `--password <YOUR_PASSWORD>` (command form when supported)
+- `apiPassword=<YOUR_PASSWORD>` / `masterPassword=<YOUR_PASSWORD>` (chat/runtime input form)
+- `--api-password <YOUR_PASSWORD>` / `--master-password <YOUR_PASSWORD>` (command form)
 
 Use direct prompt styles that name the credential class:
-- order / API-wallet flow: `This action needs your api-wallet password. Please provide: password=<YOUR_PASSWORD>.`
-- transfer / master-wallet flow: `This transfer needs your master-wallet password. Please provide: password=<YOUR_PASSWORD>.`
-- master-key management flow: `This action needs your master-wallet password. Please provide: password=<YOUR_PASSWORD>.`
+- order / API-wallet flow: `This action needs your api-wallet password. Please provide: --api-password <YOUR_PASSWORD>.`
+- transfer / master-wallet flow: `This transfer needs your master-wallet password. Please provide: --master-password <YOUR_PASSWORD>.`
+- master-key management flow: `This action needs your master-wallet password. Please provide: --master-password <YOUR_PASSWORD>.`
 
 Never assume reuse across credential classes:
 - if an order flow succeeded with an `api-wallet password`, still ask for `master-wallet password` before `transfer ...` unless master-password availability is explicitly known
@@ -475,23 +475,23 @@ If the result is uncertain because of timeout or network failure:
 
 ### Master-key management
 Use:
-- `dpro-hl account add-master <masterAddress> <masterPrivKey> --password <password>`
-- `dpro-hl account update-master <masterAddress> <masterPrivKey> --password <password>`
-- `dpro-hl account remove-master <masterAddress> --password <password>`
+- `dpro-hl account add-master <masterAddress> <masterPrivKey> --master-password <password>`
+- `dpro-hl account update-master <masterAddress> <masterPrivKey> --master-password <password>`
+- `dpro-hl account remove-master <masterAddress> --master-password <password>`
 
 Rules:
 - these commands require `master-wallet password`
 - when the user needs to fix `MasterKey=no` or a `missing master key` error, ask for password input before giving or executing the repair command
 - do not give only the command and omit the password requirement
 - do not say "there is no password prompt here, so try `add-master` directly"
-- if password is not yet available, first request `password=<YOUR_PASSWORD>` or `--password <YOUR_PASSWORD>`
+- if password is not yet available, first request `--master-password <YOUR_PASSWORD>` (or runtime `masterPassword=<YOUR_PASSWORD>`)
 - only after password availability is clear should the agent continue with `add-master`, `update-master`, or `remove-master`
 
 Master-key management example:
 - `account ls` shows `MasterKey=no` for an API account
 - explain that the account exists and only the master-key mapping is missing
 - ask for `master-wallet password`
-- then guide the user to `dpro-hl account add-master <masterAddress> <masterPrivKey> --password <password>`
+- then guide the user to `dpro-hl account add-master <masterAddress> <masterPrivKey> --master-password <password>`
 
 ### Transfers
 Use `dpro-hl transfer <usd> [--to perp|spot]`.

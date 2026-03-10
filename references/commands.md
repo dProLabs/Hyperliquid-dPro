@@ -10,7 +10,8 @@ These flags can be used across commands when applicable.
 |---|---|
 | `--json` | Return raw JSON output |
 | `--account <alias>` | Select account alias for account/trade queries |
-| `--password <password>` | Provide master password for encrypted API-key operations |
+| `--api-password <password>` | Provide API-wallet password for encrypted API key operations |
+| `--master-password <password>` | Provide master-wallet password for encrypted master key operations |
 
 ### Password Cache Environment Variables
 
@@ -100,19 +101,19 @@ List markets and symbols. Use this output as symbol source of truth.
 
 Add read-only account.
 
-### `dpro-hl account add-api <masterAddress> <agentPrivKey> [alias]  --password <password>`
+### `dpro-hl account add-api <masterAddress> <agentPrivKey> [alias]  --api-password <password>`
 
 Add API account for write actions.
 
-### `dpro-hl account add-master <masterAddress> <masterPrivKey>  --password <password>`
+### `dpro-hl account add-master <masterAddress> <masterPrivKey>  --master-password <password>`
 
 Add master private key mapping for a master address. Required for `dpro-hl transfer ...`.
 
-### `dpro-hl account update-master <masterAddress> <masterPrivKey>  --password <password>`
+### `dpro-hl account update-master <masterAddress> <masterPrivKey>  --master-password <password>`
 
 Rotate/update stored master private key mapping for a master address.
 
-### `dpro-hl account remove-master <masterAddress>  --password <password>`
+### `dpro-hl account remove-master <masterAddress>  --master-password <password>`
 
 Remove stored master private key mapping for a master address.
 

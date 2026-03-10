@@ -9,7 +9,14 @@ describe('account clear-password-cache command', () => {
   it('returns success and clears cache file', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dpro-hl-account-pwd-cache-'));
     const cacheFile = join(dir, 'password-session.json');
-    writeFileSync(cacheFile, JSON.stringify({ password: 'x', savedAt: 1, expiresAt: Date.now() + 60_000 }), 'utf8');
+    writeFileSync(cacheFile, JSON.stringify({
+      apiPassword: 'api-x',
+      masterPassword: 'master-x',
+      apiSavedAt: 1,
+      masterSavedAt: 1,
+      apiExpiresAt: Date.now() + 60_000,
+      masterExpiresAt: Date.now() + 60_000,
+    }), 'utf8');
     assert.equal(existsSync(cacheFile), true);
 
     const prevPath = process.env.DPRO_HL_PASSWORD_CACHE_FILE;

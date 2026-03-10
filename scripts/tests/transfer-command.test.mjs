@@ -96,7 +96,7 @@ describe('transfer command', () => {
     __setTransferDepsForTest({
       resolveAccount: () => makeApiAccount(),
       getMasterPrivateKeyByAddress: () => {
-        const err = new Error('No private key for account: 0x1234567890abcdef1234567890abcdef12345678 (missing master key, run: dpro-hl account add-master <masterAddress> <masterPrivKey> --password <password>)');
+        const err = new Error('No private key for account: 0x1234567890abcdef1234567890abcdef12345678 (missing master key, run: dpro-hl account add-master <masterAddress> <masterPrivKey> --master-password <password>)');
         err.code = 'PRIVATE_KEY_MISSING';
         throw err;
       },
