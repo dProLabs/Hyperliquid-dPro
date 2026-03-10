@@ -9,6 +9,16 @@ import { maybeAutoUpgrade } from './auto-upgrade.mjs';
 let initialized = false;
 let maybeAutoUpgradeImpl = maybeAutoUpgrade;
 
+export function __resolvePasswordForTest(parsed, runtimeContext = {}, env = process.env) {
+  return (
+    parsed?.flags?.password ||
+    runtimeContext?.password ||
+    env.DPRO_HL_MASTER_PASSWORD ||
+    env.MASTER_PASSWORD ||
+    null
+  );
+}
+
 async function ensureHandlers() {
   if (initialized) return;
   const [market, account, trade, onchain] = await Promise.all([
@@ -34,8 +44,8 @@ export async function runHyperliquidSkill(rawInput, runtimeContext = {}) {
 
     await ensureHandlers();
     const parsed = parseInput(rawInput);
-    // Support --password flag inline as well as runtimeContext.password
-    const password = parsed.flags?.password || runtimeContext.password;
+    // Support --password flag inline, runtimeContext.password, and process env fallback.
+    const password = __resolvePasswordForTest(parsed, runtimeContext);
     if (password) {
       setMasterPassword(password);
       delete parsed.flags.password; // don't leak to command handlers

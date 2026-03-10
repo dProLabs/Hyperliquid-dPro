@@ -367,8 +367,11 @@ At minimum check:
 - size completeness
 - price completeness for limit orders
 - slippage completeness for market orders when applicable
-- balance or margin sufficiency where applicable
 - market compatibility for leverage and isolated actions
+
+For perp / HIP-3 order writes:
+- do not hard-block solely because displayed `perpEquity` is `0`
+- submit the order first, then use venue rejection (`insufficient margin` / `insufficient balance`) as the funding truth signal
 
 ### Step 4: summarize intended effect
 Before submission, summarize:
@@ -424,6 +427,7 @@ Rules:
 - `set-leverage` and `topup-isolated` are valid here
 - `market` uses bounded slippage / IOC-limit semantics
 - `reduce-only` is valid where supported
+- unified-account behavior: never require a pre-trade "transfer to perp" check based only on `perpEquity`; if the venue rejects for funding, return that rejection and guide the user to add collateral or reduce size
 
 ### HIP-3 orders
 Use `dpro-hl hip3 order ...`.

@@ -266,7 +266,12 @@ const formatters = {
   order_result: (d) => {
     if (d.status === 'filled') return `Order filled: ${d.coin} ${d.side} ${d.size} @ ${fmtPx(d.price)}`;
     if (d.status === 'resting') return `Order resting: ${d.coin} ${d.side} ${d.size} @ ${fmtPx(d.price)} (oid: ${d.oid})`;
-    if (d.status === 'error') return `Order error: ${d.error}`;
+    if (d.status === 'error') {
+      if (d.errorClass === 'INSUFFICIENT_MARGIN') {
+        return `Order rejected by venue: insufficient balance or margin (${d.error}).`;
+      }
+      return `Order error: ${d.error}`;
+    }
     return `Order status: ${d.status}`;
   },
 
