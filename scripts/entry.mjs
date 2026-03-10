@@ -1,13 +1,32 @@
 import { parseInput } from './parser.mjs';
 import { routeCommand, registerHandlers } from './router.mjs';
 import { formatResult } from './format.mjs';
-import { SkillError } from './errors.mjs';
+import { ErrorCode, SkillError } from './errors.mjs';
 import { setMasterPassword } from './store.mjs';
 import { maybeAutoUpgrade } from './auto-upgrade.mjs';
+import { clearCachedPassword, loadCachedPassword, saveCachedPassword } from './password-cache.mjs';
 
 // Lazy-load command modules to avoid circular deps
 let initialized = false;
 let maybeAutoUpgradeImpl = maybeAutoUpgrade;
+
+export function __resolvePasswordForTest(parsed, runtimeContext = {}, env = process.env) {
+  return (
+    parsed?.flags?.password ||
+    runtimeContext?.password ||
+    env.DPRO_HL_MASTER_PASSWORD ||
+    env.MASTER_PASSWORD ||
+    loadCachedPassword(Date.now(), env) ||
+    null
+  );
+}
+
+export function __shouldClearPasswordCacheForTest(err) {
+  if (!(err instanceof SkillError)) return false;
+  if (err.code === ErrorCode.ENCRYPTION_ERROR) return true;
+  const message = String(err.message || '').toLowerCase();
+  return message.includes('wrong password') || message.includes('decryption failed') || message.includes('master password');
+}
 
 async function ensureHandlers() {
   if (initialized) return;
@@ -34,11 +53,16 @@ export async function runHyperliquidSkill(rawInput, runtimeContext = {}) {
 
     await ensureHandlers();
     const parsed = parseInput(rawInput);
-    // Support --password flag inline as well as runtimeContext.password
-    const password = parsed.flags?.password || runtimeContext.password;
+    // Support --password flag inline, runtimeContext.password, and process env fallback.
+    const explicitPassword = parsed?.flags?.password || null;
+    const runtimePassword = runtimeContext?.password || null;
+    const password = __resolvePasswordForTest(parsed, runtimeContext);
     if (password) {
       setMasterPassword(password);
       delete parsed.flags.password; // don't leak to command handlers
+    }
+    if (explicitPassword || runtimePassword) {
+      saveCachedPassword(explicitPassword || runtimePassword);
     }
     const outputMode = parsed.flags?.json ? 'json' : 'text';
     const result = await routeCommand(parsed, runtimeContext);
@@ -47,6 +71,9 @@ export async function runHyperliquidSkill(rawInput, runtimeContext = {}) {
     }
     return formatResult(result, outputMode);
   } catch (err) {
+    if (__shouldClearPasswordCacheForTest(err)) {
+      clearCachedPassword();
+    }
     if (err instanceof SkillError) {
       const formatted = formatResult(err);
       if (!warnings.length) return formatted;

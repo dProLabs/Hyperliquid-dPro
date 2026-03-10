@@ -21,6 +21,12 @@ const defaultDeps = {
 };
 const deps = { ...defaultDeps };
 const TRADE_MARKET_TYPES = new Set(['spot', 'perp', 'hip3']);
+const INSUFFICIENT_MARGIN_PATTERNS = [
+  'insufficient margin',
+  'insufficient balance',
+  'not enough collateral',
+  'insufficient collateral',
+];
 
 function getTradeContext(parsed, ctx) {
   const account = deps.resolveAccount(parsed.flags?.account || null);
@@ -139,6 +145,7 @@ function parseOrderResponse(response, coin, side, size, price) {
     } else if (st?.error) {
       data.status = 'error';
       data.error = st.error;
+      if (isInsufficientMarginLike(st.error)) data.errorClass = 'INSUFFICIENT_MARGIN';
     } else if (typeof st === 'string') {
       data.status = st.toLowerCase() === 'success' ? 'submitted' : 'unknown';
     } else {
@@ -147,11 +154,23 @@ function parseOrderResponse(response, coin, side, size, price) {
   } else if (response?.status === 'err' || response?.error) {
     data.status = 'error';
     data.error = response?.error || response?.response || 'Unknown error';
+    if (isInsufficientMarginLike(data.error)) data.errorClass = 'INSUFFICIENT_MARGIN';
   } else {
     data.status = 'submitted';
   }
 
   return data;
+}
+
+function isInsufficientMarginLike(errorMessage) {
+  const text = String(errorMessage || '').toLowerCase();
+  return INSUFFICIENT_MARGIN_PATTERNS.some((p) => text.includes(p));
+}
+
+function getOrderRejectionWarning(data) {
+  if (data?.status !== 'error') return null;
+  if (data?.errorClass !== 'INSUFFICIENT_MARGIN') return null;
+  return 'Order rejected by venue: insufficient balance or margin. Check balances/collateral and retry with smaller size if needed.';
 }
 
 function trimTrailingZeros(numStr) {
@@ -178,6 +197,10 @@ function validateOrderWireValues({ coin, sizeInput, sizeWire, szDecimals, priceW
 // Test-only export for response normalization behavior.
 export function __parseOrderResponseForTest(response, coin, side, size, price) {
   return parseOrderResponse(response, coin, side, size, price);
+}
+
+export function __isInsufficientMarginLikeForTest(errorMessage) {
+  return isInsufficientMarginLike(errorMessage);
 }
 
 // Test-only export for wire preflight validation.
@@ -236,7 +259,8 @@ async function limit(parsed, ctx) {
   );
 
   const data = parseOrderResponse(response, coin, side, size, price);
-  return { ok: true, type: 'order_result', data };
+  const warning = getOrderRejectionWarning(data);
+  return { ok: true, type: 'order_result', data, ...(warning ? { warnings: [warning] } : {}) };
 }
 
 async function market(parsed, ctx) {
@@ -301,7 +325,10 @@ async function market(parsed, ctx) {
   );
 
   const data = parseOrderResponse(response, coin, side, size, protectionPrice);
-  const warnings = [`Market order executed as IOC @ ${wirePrice} (mid: ${mid}, slippage: ${slippagePct}%)`];
+  const warnings = [];
+  const rejectionWarning = getOrderRejectionWarning(data);
+  if (rejectionWarning) warnings.push(rejectionWarning);
+  warnings.push(`Market order executed as IOC @ ${wirePrice} (mid: ${mid}, slippage: ${slippagePct}%)`);
   return { ok: true, type: 'order_result', data, warnings };
 }
 

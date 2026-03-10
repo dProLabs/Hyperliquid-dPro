@@ -218,6 +218,7 @@ const formatters = {
   'account-added': (d) => `Account "${d.alias}" added (${d.mode}, ${d.masterAddress.slice(0, 10)}...)`,
   'account-removed': (d) => `Account "${d.alias}" removed.`,
   'account-default-set': (d) => `Default account set to "${d.alias}".`,
+  'password-cache-cleared': () => 'Password session cache cleared.',
 
   positions: (d) => {
     if (!d.positions.length) return 'No open positions.';
@@ -266,7 +267,12 @@ const formatters = {
   order_result: (d) => {
     if (d.status === 'filled') return `Order filled: ${d.coin} ${d.side} ${d.size} @ ${fmtPx(d.price)}`;
     if (d.status === 'resting') return `Order resting: ${d.coin} ${d.side} ${d.size} @ ${fmtPx(d.price)} (oid: ${d.oid})`;
-    if (d.status === 'error') return `Order error: ${d.error}`;
+    if (d.status === 'error') {
+      if (d.errorClass === 'INSUFFICIENT_MARGIN') {
+        return `Order rejected by venue: insufficient balance or margin (${d.error}).`;
+      }
+      return `Order error: ${d.error}`;
+    }
     return `Order status: ${d.status}`;
   },
 

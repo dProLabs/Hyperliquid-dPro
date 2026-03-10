@@ -60,6 +60,12 @@ describe('formatResult', () => {
     assert.ok(formatResult(result).includes('test help'));
   });
 
+  it('formats password-cache-cleared result', () => {
+    const result = { ok: true, type: 'password-cache-cleared', data: { cleared: true } };
+    const out = formatResult(result);
+    assert.ok(out.includes('Password session cache cleared'));
+  });
+
   it('formats JSON mode', () => {
     const result = { ok: true, type: 'quote', data: { coin: 'BTC', mid: '91234' } };
     const out = formatResult(result, 'json');
@@ -93,10 +99,10 @@ describe('formatResult', () => {
   it('formats order result - error', () => {
     const result = {
       ok: true, type: 'order_result',
-      data: { status: 'error', error: 'Insufficient margin' },
+      data: { status: 'error', error: 'Insufficient margin', errorClass: 'INSUFFICIENT_MARGIN' },
     };
     const out = formatResult(result);
-    assert.ok(out.includes('Insufficient margin'));
+    assert.ok(out.includes('insufficient balance or margin'));
   });
 
   it('shows warnings', () => {

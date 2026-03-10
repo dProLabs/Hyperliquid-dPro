@@ -1,9 +1,23 @@
 import * as store from '../store.mjs';
 import * as infoClient from '../clients/info-client.mjs';
-import { resolveAccount, resolveQueryAddress } from '../resolvers/account-resolver.mjs';
+import { resolveQueryAddress } from '../resolvers/account-resolver.mjs';
+import { findMarket } from '../resolvers/market-resolver.mjs';
 import { assertAddress, assertPrivateKey } from '../utils/validate.mjs';
 import { inputError } from '../errors.mjs';
 import { DEFAULT_FILL_LIMIT } from '../constants.mjs';
+import { clearCachedPassword } from '../password-cache.mjs';
+
+const defaultDeps = {
+  store,
+  infoClient,
+  resolveQueryAddress,
+  findMarket,
+  assertAddress,
+  assertPrivateKey,
+  inputError,
+};
+
+const deps = { ...defaultDeps };
 
 // Derive agent address from private key
 async function deriveAddress(privateKeyHex) {
@@ -15,13 +29,57 @@ async function deriveAddress(privateKeyHex) {
   return '0x' + Buffer.from(hash).slice(-20).toString('hex');
 }
 
+function inferPerpDex(meta, dexIndex) {
+  if (dexIndex === 0) return '';
+  const firstName = meta?.universe?.[0]?.name || '';
+  if (!firstName) return '';
+  return firstName.includes(':') ? firstName.split(':')[0] : firstName;
+}
+
+async function loadPerpStates(address, netOpts) {
+  try {
+    const metas = await deps.infoClient.getAllPerpMetas(netOpts);
+    if (!Array.isArray(metas) || !metas.length) {
+      return [await deps.infoClient.getClearinghouseState(address, netOpts)];
+    }
+    const states = await Promise.all(
+      metas.map((meta, dexIndex) => deps.infoClient.getClearinghouseState(
+        address,
+        { ...netOpts, dex: inferPerpDex(meta, dexIndex) },
+      )),
+    );
+    return states.filter(Boolean);
+  } catch {
+    // Fallback to legacy single-dex behavior if dex discovery fails.
+    return [await deps.infoClient.getClearinghouseState(address, netOpts)];
+  }
+}
+
+function makeCoinDisplayResolver(isTestnet) {
+  const cache = new Map();
+  return async (coin) => {
+    if (!coin) return coin;
+    if (!String(coin).startsWith('@')) return coin;
+    if (cache.has(coin)) return cache.get(coin);
+    try {
+      const market = await deps.findMarket(coin, { isTestnet });
+      const resolved = market?.coin || coin;
+      cache.set(coin, resolved);
+      return resolved;
+    } catch {
+      cache.set(coin, coin);
+      return coin;
+    }
+  };
+}
+
 async function addReadonly(parsed) {
   const address = parsed.target;
-  if (!address) throw inputError('Usage: dpro-hl account add-readonly <address> [alias]');
-  assertAddress(address, 'master address');
+  if (!address) throw deps.inputError('Usage: dpro-hl account add-readonly <address> [alias]');
+  deps.assertAddress(address, 'master address');
 
   const alias = parsed.args?.rest?.[0] || address.slice(0, 8);
-  const account = store.addReadonlyAccount(address, alias);
+  const account = deps.store.addReadonlyAccount(address, alias);
 
   return { ok: true, type: 'account-added', data: { alias: account.alias, masterAddress: account.masterAddress, mode: 'readonly' } };
 }
@@ -32,22 +90,22 @@ async function addApi(parsed, ctx) {
   const alias = parsed.args?.rest?.[1];
 
   if (!masterAddress || !agentPrivateKey) {
-    throw inputError('Usage: dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]  --password <password>');
+    throw deps.inputError('Usage: dpro-hl account add-api <masterAddress> <agentPrivateKey> [alias]  --password <password>');
   }
 
-  assertAddress(masterAddress, 'master address');
-  const cleanKey = assertPrivateKey(agentPrivateKey);
+  deps.assertAddress(masterAddress, 'master address');
+  const cleanKey = deps.assertPrivateKey(agentPrivateKey);
 
   // Set master password from context if provided
-  if (ctx?.password) store.setMasterPassword(ctx.password);
-  if (!store.getMasterPassword()) {
-    throw inputError('Master password required. Pass via runtimeContext.password or set it first.');
+  if (ctx?.password) deps.store.setMasterPassword(ctx.password);
+  if (!deps.store.getMasterPassword()) {
+    throw deps.inputError('Master password required. Pass via runtimeContext.password or set it first.');
   }
 
   const agentAddress = await deriveAddress(cleanKey);
   const accountAlias = alias || masterAddress.slice(0, 8);
 
-  const account = store.addApiAccount(masterAddress, agentAddress, cleanKey, accountAlias);
+  const account = deps.store.addApiAccount(masterAddress, agentAddress, cleanKey, accountAlias);
 
   return {
     ok: true,
@@ -57,37 +115,43 @@ async function addApi(parsed, ctx) {
 }
 
 async function ls() {
-  const accounts = store.listAccounts();
+  const accounts = deps.store.listAccounts();
   return { ok: true, type: 'account-ls', data: { accounts } };
 }
 
 async function remove(parsed) {
   const alias = parsed.target;
-  if (!alias) throw inputError('Usage: dpro-hl account remove <alias>');
-  store.removeAccount(alias);
+  if (!alias) throw deps.inputError('Usage: dpro-hl account remove <alias>');
+  deps.store.removeAccount(alias);
   return { ok: true, type: 'account-removed', data: { alias } };
 }
 
 async function setDefault(parsed) {
   const alias = parsed.target;
-  if (!alias) throw inputError('Usage: dpro-hl account set-default <alias>');
-  store.setDefaultAccount(alias);
+  if (!alias) throw deps.inputError('Usage: dpro-hl account set-default <alias>');
+  deps.store.setDefaultAccount(alias);
   return { ok: true, type: 'account-default-set', data: { alias } };
 }
 
+async function clearPasswordCache() {
+  clearCachedPassword();
+  return { ok: true, type: 'password-cache-cleared', data: { cleared: true } };
+}
+
 async function positions(parsed, ctx) {
-  const address = resolveQueryAddress(parsed.target);
+  const address = deps.resolveQueryAddress(parsed.target);
   const isTestnet = ctx?.network === 'testnet';
   const netOpts = { isTestnet };
-  const [perpState, spotState] = await Promise.all([
-    infoClient.getClearinghouseState(address, netOpts),
-    infoClient.getSpotClearinghouseState(address, netOpts),
+  const [perpStates] = await Promise.all([
+    loadPerpStates(address, netOpts),
+    deps.infoClient.getSpotClearinghouseState(address, netOpts),
   ]);
 
   const positions = [];
 
-  // Perp positions
-  if (perpState?.assetPositions) {
+  // Aggregate positions from all perp dexes (main + HIP-3/perp namespaces).
+  for (const perpState of (perpStates || [])) {
+    if (!perpState?.assetPositions) continue;
     for (const ap of perpState.assetPositions) {
       const pos = ap.position;
       if (Number(pos.szi) === 0) continue;
@@ -109,12 +173,12 @@ async function positions(parsed, ctx) {
 }
 
 async function balances(parsed, ctx) {
-  const address = resolveQueryAddress(parsed.target);
+  const address = deps.resolveQueryAddress(parsed.target);
   const isTestnet = ctx?.network === 'testnet';
   const netOpts = { isTestnet };
   const [perpState, spotState] = await Promise.all([
-    infoClient.getClearinghouseState(address, netOpts),
-    infoClient.getSpotClearinghouseState(address, netOpts),
+    deps.infoClient.getClearinghouseState(address, netOpts),
+    deps.infoClient.getSpotClearinghouseState(address, netOpts),
   ]);
 
   const data = {};
@@ -138,43 +202,44 @@ async function balances(parsed, ctx) {
 }
 
 async function orders(parsed, ctx) {
-  const address = resolveQueryAddress(parsed.target);
+  const address = deps.resolveQueryAddress(parsed.target);
   const isTestnet = ctx?.network === 'testnet';
-  const result = await infoClient.getOpenOrders(address, { isTestnet, dex: 'ALL_DEXS' });
+  const result = await deps.infoClient.getOpenOrders(address, { isTestnet, dex: 'ALL_DEXS' });
+  const toDisplayCoin = makeCoinDisplayResolver(isTestnet);
 
-  const orderList = (result || []).map(o => ({
+  const orderList = await Promise.all((result || []).map(async (o) => ({
     oid: o.oid,
-    coin: o.coin,
+    coin: await toDisplayCoin(o.coin),
     side: o.side === 'B' ? 'Buy' : 'Sell',
     sz: o.sz,
     limitPx: o.limitPx,
     orderType: o.orderType,
-  }));
+  })));
 
   return { ok: true, type: 'orders', data: { orders: orderList } };
 }
 
 async function fills(parsed, ctx) {
-  const address = resolveQueryAddress(parsed.target);
+  const address = deps.resolveQueryAddress(parsed.target);
   const limit = Number(parsed.flags?.limit) || DEFAULT_FILL_LIMIT;
   const isTestnet = ctx?.network === 'testnet';
 
-  const result = await infoClient.getUserFills(address, true, { isTestnet });
-  const fillList = (result || []).slice(0, limit).map(f => ({
+  const result = await deps.infoClient.getUserFills(address, true, { isTestnet });
+  const toDisplayCoin = makeCoinDisplayResolver(isTestnet);
+  const fillList = await Promise.all((result || []).slice(0, limit).map(async (f) => ({
     time: f.time,
-    coin: f.coin,
+    coin: await toDisplayCoin(f.coin),
     side: f.side === 'B' ? 'Buy' : 'Sell',
     sz: f.sz,
     px: f.px,
     fee: f.fee,
     oid: f.oid,
-  }));
+  })));
 
   return { ok: true, type: 'fills', data: { fills: fillList } };
 }
 
 async function portfolio(parsed, ctx) {
-  const address = resolveQueryAddress(parsed.target);
   const [posResult, balResult, ordResult] = await Promise.all([
     positions(parsed, ctx),
     balances(parsed, ctx),
@@ -191,7 +256,17 @@ async function portfolio(parsed, ctx) {
   return { ok: true, type: 'balances', data };
 }
 
+// Test-only dependency injection.
+export function __setAccountDepsForTest(overrides = {}) {
+  Object.assign(deps, overrides);
+}
+
+export function __resetAccountDepsForTest() {
+  Object.assign(deps, defaultDeps);
+}
+
 export default {
   addReadonly, addApi, ls, remove, setDefault,
+  clearPasswordCache,
   positions, balances, orders, fills, portfolio,
 };

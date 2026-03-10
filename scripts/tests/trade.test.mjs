@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { __parseOrderResponseForTest, __validateOrderWireValuesForTest } from '../commands/trade.mjs';
+import { __parseOrderResponseForTest, __validateOrderWireValuesForTest, __isInsufficientMarginLikeForTest } from '../commands/trade.mjs';
 
 describe('trade parseOrderResponse', () => {
   it('parses resting status from legacy shape', () => {
@@ -43,6 +43,7 @@ describe('trade parseOrderResponse', () => {
     const out = __parseOrderResponseForTest(res, 'BTC', 'buy', '1', '1');
     assert.equal(out.status, 'error');
     assert.equal(out.error, 'Insufficient margin');
+    assert.equal(out.errorClass, 'INSUFFICIENT_MARGIN');
   });
 
   it('parses top-level error response', () => {
@@ -50,6 +51,12 @@ describe('trade parseOrderResponse', () => {
     const out = __parseOrderResponseForTest(res, 'BTC', 'buy', '1', '1');
     assert.equal(out.status, 'error');
     assert.equal(out.error, 'bad request');
+  });
+
+  it('classifies insufficient-balance style errors', () => {
+    assert.equal(__isInsufficientMarginLikeForTest('Insufficient balance'), true);
+    assert.equal(__isInsufficientMarginLikeForTest('not enough collateral to place order'), true);
+    assert.equal(__isInsufficientMarginLikeForTest('invalid cloid'), false);
   });
 
   it('falls back to submitted when statuses are missing', () => {

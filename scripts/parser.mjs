@@ -80,7 +80,7 @@ function extractFlags(tokens) {
 // --- Command routing tables ---
 
 const MARKET_ACTIONS = new Set(['quote', 'book', 'candles', 'movers', 'overview']);
-const ACCOUNT_ACTIONS = new Set(['add-readonly', 'add-api', 'ls', 'remove', 'set-default', 'positions', 'balances', 'orders', 'fills', 'portfolio']);
+const ACCOUNT_ACTIONS = new Set(['add-readonly', 'add-api', 'ls', 'remove', 'set-default', 'clear-password-cache', 'positions', 'balances', 'orders', 'fills', 'portfolio']);
 const TRADE_ACTIONS = new Set(['limit', 'market', 'cancel', 'cancel-all', 'cancel-by-cloid', 'set-leverage', 'topup-isolated', 'modify']);
 const TRADE_NAMESPACES = new Set(['spot', 'perp', 'hip3']);
 const ONCHAIN_ACTIONS = new Set(['ping', 'health', 'mids', 'spot-meta', 'perps-meta', 'spot-holders', 'spot-holder-counts', 'perp-holders', 'liquidation-map', 'leaderboard']);

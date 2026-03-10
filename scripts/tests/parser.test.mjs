@@ -83,6 +83,12 @@ describe('parser', () => {
       assert.deepEqual(r.args.rest, ['myalias']);
     });
 
+    it('parses account clear-password-cache', () => {
+      const r = parseInput('dpro-hl account clear-password-cache');
+      assert.equal(r.domain, 'account');
+      assert.equal(r.action, 'clear-password-cache');
+    });
+
     it('parses positions shortcut', () => {
       const r = parseInput('dpro-hl positions main');
       assert.equal(r.domain, 'account');

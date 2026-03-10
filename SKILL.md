@@ -281,6 +281,11 @@ If account state is unknown before a write, check `dpro-hl account ls` first.
 If the runtime supports `runtimeContext.password`, prefer that.
 Otherwise use the canonical secure command path supported by the implementation.
 
+Password session cache is enabled by default for this skill runtime:
+- when user provides password once, later commands in the same agent session may reuse cached password across new node processes
+- do not repeatedly ask for password if a write can proceed with cached credentials
+- users may clear cache explicitly with `dpro-hl account clear-password-cache`
+
 When password is missing for a write/decrypt flow, explicitly ask the user to provide it in one of these forms:
 - `password=<YOUR_PASSWORD>` (chat/runtime input form)
 - `--password <YOUR_PASSWORD>` (command form when supported)
@@ -367,8 +372,11 @@ At minimum check:
 - size completeness
 - price completeness for limit orders
 - slippage completeness for market orders when applicable
-- balance or margin sufficiency where applicable
 - market compatibility for leverage and isolated actions
+
+For perp / HIP-3 order writes:
+- do not hard-block solely because displayed `perpEquity` is `0`
+- submit the order first, then use venue rejection (`insufficient margin` / `insufficient balance`) as the funding truth signal
 
 ### Step 4: summarize intended effect
 Before submission, summarize:
@@ -424,6 +432,7 @@ Rules:
 - `set-leverage` and `topup-isolated` are valid here
 - `market` uses bounded slippage / IOC-limit semantics
 - `reduce-only` is valid where supported
+- unified-account behavior: never require a pre-trade "transfer to perp" check based only on `perpEquity`; if the venue rejects for funding, return that rejection and guide the user to add collateral or reduce size
 
 ### HIP-3 orders
 Use `dpro-hl hip3 order ...`.
