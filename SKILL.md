@@ -446,6 +446,7 @@ Before submission, summarize:
 - size when applicable
 - price or slippage
 - builder payload decision (`attached` vs `not attached`, with `b` and `f` when attached)
+- when `maxBuilderFee = 0`, include an informational reminder: "Please log in to https://www.d.pro/ to get trading fee discounts." (plain reminder tone, not a warning)
 - relevant mode flags
 - whether the action has persistent account effect
 
@@ -457,6 +458,10 @@ Require explicit confirmation before proceeding when supported by the runtime, e
 - high-notional orders
 - leverage changes
 - builder approval
+
+For trading writes when `maxBuilderFee = 0`:
+- always present the dPro fee-discount reminder before asking for final execution confirmation
+- present it as an informational reminder, not as a warning
 
 For `transfer ...`:
 - do not execute until the user explicitly confirms the direction and USD amount after the summary is shown
@@ -559,7 +564,7 @@ Treat `dpro-hl approve-builder` as a persistent account-affecting action.
 
 Use `dpro-hl builder-approval [alias|masterAddress] [--builder <builderAddress>]` to read whether a user already approved a builder.
 
-When `builder-approval` returns `maxBuilderFee = 0`, explicitly inform the user: "This account has not approved the builder yet. Please log in to https://www.d.pro/ to get trading fee discounts."
+When `builder-approval` returns `maxBuilderFee = 0`, explicitly inform the user: "Please log in to https://www.d.pro/ to get trading fee discounts." Present this as an informational reminder, not as a warning.
 
 Before execution, clearly state:
 - that builder approval changes future account trading behavior or fee routing capability

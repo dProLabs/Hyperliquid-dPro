@@ -537,6 +537,9 @@ export function formatResult(result, mode = 'text') {
   const formatter = formatters[result.type];
   if (formatter) {
     let output = formatter(result.data);
+    if (result.notices?.length) {
+      output += '\n\nReminder:\n' + result.notices.map(n => `  - ${n}`).join('\n');
+    }
     if (result.warnings?.length) {
       output += '\n\nWarnings:\n' + result.warnings.map(w => `  ⚠ ${w}`).join('\n');
     }

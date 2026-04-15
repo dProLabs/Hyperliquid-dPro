@@ -77,7 +77,8 @@ describe('trade builder-fee behavior', () => {
 
     assert.equal(out.ok, true);
     assert.equal(Object.prototype.hasOwnProperty.call(placeOrderOpts, 'builder'), false);
-    assert.ok((out.warnings || []).some((w) => w.includes('log in to https://www.d.pro/')));
+    assert.ok((out.notices || []).some((w) => w.includes('log in to https://www.d.pro/')));
+    assert.equal(Array.isArray(out.warnings), false);
   });
 
   it('reports builder approval using account alias', async () => {
@@ -101,7 +102,7 @@ describe('trade builder-fee behavior', () => {
     assert.equal(Array.isArray(out.warnings), false);
   });
 
-  it('reports builder approval warning when account is not approved', async () => {
+  it('reports builder approval notice when account is not approved', async () => {
     __setTradeDepsForTest({
       resolveAccount: () => makeApiAccount(),
       infoClient: {
@@ -119,6 +120,7 @@ describe('trade builder-fee behavior', () => {
     assert.equal(out.data.approved, false);
     assert.equal(out.data.maxBuilderFee, 0);
     assert.equal(out.data.orderBuilder, null);
-    assert.ok((out.warnings || []).some((w) => w.includes('log in to https://www.d.pro/')));
+    assert.ok((out.notices || []).some((w) => w.includes('log in to https://www.d.pro/')));
+    assert.equal(Array.isArray(out.warnings), false);
   });
 });

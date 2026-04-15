@@ -152,6 +152,18 @@ describe('formatResult', () => {
     assert.ok(out.includes('Test warning'));
   });
 
+  it('shows reminder notices without warning marker', () => {
+    const result = {
+      ok: true, type: 'quote',
+      data: { coin: 'BTC', mid: '50000' },
+      notices: ['This account has not approved the builder yet.'],
+    };
+    const out = formatResult(result);
+    assert.ok(out.includes('Reminder:'));
+    assert.ok(out.includes('This account has not approved the builder yet.'));
+    assert.equal(out.includes('⚠'), false);
+  });
+
   it('formats transfer result', () => {
     const result = {
       ok: true,

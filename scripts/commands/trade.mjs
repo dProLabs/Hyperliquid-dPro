@@ -28,7 +28,7 @@ const INSUFFICIENT_MARGIN_PATTERNS = [
   'insufficient collateral',
 ];
 const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
-const BUILDER_NOT_APPROVED_MESSAGE = 'This account has not approved the builder yet. Please log in to https://www.d.pro/ to get trading fee discounts.';
+const BUILDER_NOT_APPROVED_MESSAGE = 'Please log in to https://www.d.pro/ to get trading fee discounts.';
 
 function getTradeContext(parsed, ctx) {
   const account = deps.resolveAccount(parsed.flags?.account || null);
@@ -160,7 +160,7 @@ async function resolveBuilderForOrder(masterAddress, isTestnet = false) {
     );
 
     if (maxBuilderFee <= 0) {
-      return { builder: null, warning: BUILDER_NOT_APPROVED_MESSAGE };
+      return { builder: null, notice: BUILDER_NOT_APPROVED_MESSAGE, warning: null };
     }
 
     return {
@@ -168,11 +168,13 @@ async function resolveBuilderForOrder(masterAddress, isTestnet = false) {
         b: BUILDER_ADDRESS,
         f: Math.min(BUILDER_FEE, maxBuilderFee),
       },
+      notice: null,
       warning: null,
     };
   } catch {
     return {
       builder: null,
+      notice: null,
       warning: `Builder approval check failed for ${BUILDER_ADDRESS}; order submitted without builder fee.`,
     };
   }
@@ -319,11 +321,19 @@ async function limit(parsed, ctx) {
   );
 
   const data = parseOrderResponse(response, coin, side, size, price);
+  const notices = [];
+  if (builderDecision.notice) notices.push(builderDecision.notice);
   const warnings = [];
   if (builderDecision.warning) warnings.push(builderDecision.warning);
   const rejectionWarning = getOrderRejectionWarning(data);
   if (rejectionWarning) warnings.push(rejectionWarning);
-  return { ok: true, type: 'order_result', data, ...(warnings.length ? { warnings } : {}) };
+  return {
+    ok: true,
+    type: 'order_result',
+    data,
+    ...(notices.length ? { notices } : {}),
+    ...(warnings.length ? { warnings } : {}),
+  };
 }
 
 async function market(parsed, ctx) {
@@ -394,12 +404,20 @@ async function market(parsed, ctx) {
   );
 
   const data = parseOrderResponse(response, coin, side, size, protectionPrice);
+  const notices = [];
+  if (builderDecision.notice) notices.push(builderDecision.notice);
   const warnings = [];
   if (builderDecision.warning) warnings.push(builderDecision.warning);
   const rejectionWarning = getOrderRejectionWarning(data);
   if (rejectionWarning) warnings.push(rejectionWarning);
   warnings.push(`Market order executed as IOC @ ${wirePrice} (mid: ${mid}, slippage: ${slippagePct}%)`);
-  return { ok: true, type: 'order_result', data, warnings };
+  return {
+    ok: true,
+    type: 'order_result',
+    data,
+    ...(notices.length ? { notices } : {}),
+    warnings,
+  };
 }
 
 async function builderApproval(parsed, ctx) {
@@ -411,8 +429,8 @@ async function builderApproval(parsed, ctx) {
   );
   const approved = maxBuilderFee > 0;
   const fee = approved ? Math.min(BUILDER_FEE, maxBuilderFee) : null;
-  const warnings = [];
-  if (!approved) warnings.push(BUILDER_NOT_APPROVED_MESSAGE);
+  const notices = [];
+  if (!approved) notices.push(BUILDER_NOT_APPROVED_MESSAGE);
 
   return {
     ok: true,
@@ -424,7 +442,7 @@ async function builderApproval(parsed, ctx) {
       approved,
       orderBuilder: approved ? { b: builderAddress, f: fee } : null,
     },
-    ...(warnings.length ? { warnings } : {}),
+    ...(notices.length ? { notices } : {}),
   };
 }
 

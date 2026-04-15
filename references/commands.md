@@ -360,7 +360,7 @@ Check whether the selected user has already authorized the builder.
 - Resolve `user` from the selected account's `masterAddress` (or explicit address).
 - Query `maxBuilderFee` using `user` and the selected `builder` address.
 - `maxBuilderFee > 0` means approved; use it to decide whether to attach `{"b": builder, "f": fee}` to orders.
-- When `maxBuilderFee = 0`, explicitly inform the user: "This account has not approved the builder yet. Please log in to https://www.d.pro/ to get trading fee discounts."
+- When `maxBuilderFee = 0`, explicitly inform the user: "Please log in to https://www.d.pro/ to get trading fee discounts." Present this as an informational reminder, not as a warning.
 
 ---
 
