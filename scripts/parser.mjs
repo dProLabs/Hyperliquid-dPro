@@ -136,6 +136,11 @@ function parseStructured(tokens, flags, raw) {
     return { domain: 'trade', action: 'approve-builder', target: null, args: {}, flags, raw };
   }
 
+  // "builder-approval [alias|address] [--builder <address>]"
+  if (first === 'builder-approval') {
+    return { domain: 'trade', action: 'builder-approval', target: tokens[1] || null, args: {}, flags, raw };
+  }
+
   // "transfer <usd> --to perp|spot"
   if (first === 'transfer') {
     const usd = tokens[1];
@@ -229,7 +234,7 @@ function parseStructured(tokens, flags, raw) {
     };
   }
 
-  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, transfer, onchain, account, spot order, perp order, hip3 order, positions, balances, orders, fills`);
+  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, transfer, onchain, account, spot order, perp order, hip3 order, approve-builder, builder-approval, positions, balances, orders, fills`);
 }
 
 function parseTradeAction(marketType, tokens, flags, raw) {

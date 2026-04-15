@@ -8,7 +8,7 @@ import { generateCloid } from '../utils/ids.mjs';
 import { priceToWire, sizeToWire } from '../utils/numbers.mjs';
 import { assertSide, assertPositiveNumber, assertPositiveInteger, assertTif, assertCoin } from '../utils/validate.mjs';
 import { inputError, privateKeyMissing, assetNotFound } from '../errors.mjs';
-import { BUILDER_ADDRESS, BUILDER_MAX_FEE_RATE, DEFAULT_SLIPPAGE_PCT } from '../constants.mjs';
+import { BUILDER_ADDRESS, BUILDER_FEE, BUILDER_MAX_FEE_RATE, DEFAULT_SLIPPAGE_PCT } from '../constants.mjs';
 
 const defaultDeps = {
   exchangeClient,
@@ -27,6 +27,8 @@ const INSUFFICIENT_MARGIN_PATTERNS = [
   'not enough collateral',
   'insufficient collateral',
 ];
+const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+const BUILDER_NOT_APPROVED_MESSAGE = 'Please log in to https://www.d.pro/ to get trading fee discounts.';
 
 function getTradeContext(parsed, ctx) {
   const account = deps.resolveAccount(parsed.flags?.account || null);
@@ -122,6 +124,60 @@ async function resolveOrderNamespace(order, isTestnet = false) {
   }
 
   return 'ambiguous';
+}
+
+function isEthAddress(value) {
+  return ETH_ADDRESS_RE.test(String(value || ''));
+}
+
+function normalizeMaxBuilderFee(value) {
+  const asNumber = Number(value);
+  if (!Number.isFinite(asNumber) || asNumber <= 0) return 0;
+  return Math.max(0, Math.floor(asNumber));
+}
+
+function resolveBuilderApprovalUser(parsed) {
+  const explicitUser = parsed?.target || parsed?.flags?.user || parsed?.flags?.account || null;
+  if (explicitUser && isEthAddress(explicitUser)) {
+    return explicitUser;
+  }
+  const account = deps.resolveAccount(explicitUser || null);
+  return account.masterAddress;
+}
+
+function resolveBuilderAddress(parsed) {
+  const builder = String(parsed?.flags?.builder || BUILDER_ADDRESS);
+  if (!isEthAddress(builder)) {
+    throw inputError(`Invalid builder address: ${builder}`);
+  }
+  return builder;
+}
+
+async function resolveBuilderForOrder(masterAddress, isTestnet = false) {
+  try {
+    const maxBuilderFee = normalizeMaxBuilderFee(
+      await deps.infoClient.getMaxBuilderFee(masterAddress, BUILDER_ADDRESS, { isTestnet }),
+    );
+
+    if (maxBuilderFee <= 0) {
+      return { builder: null, notice: BUILDER_NOT_APPROVED_MESSAGE, warning: null };
+    }
+
+    return {
+      builder: {
+        b: BUILDER_ADDRESS,
+        f: Math.min(BUILDER_FEE, maxBuilderFee),
+      },
+      notice: null,
+      warning: null,
+    };
+  } catch {
+    return {
+      builder: null,
+      notice: null,
+      warning: `Builder approval check failed for ${BUILDER_ADDRESS}; order submitted without builder fee.`,
+    };
+  }
 }
 
 function parseOrderResponse(response, coin, side, size, price) {
@@ -253,14 +309,31 @@ async function limit(parsed, ctx) {
     orderType: { limit: { tif } },
   };
 
+  const builderDecision = await resolveBuilderForOrder(account.masterAddress, isTestnet);
+
   const response = await deps.exchangeClient.placeOrder(
     orderSpec, privateKey, account.agentAddress,
-    { isTestnet, cloid }
+    {
+      isTestnet,
+      cloid,
+      ...(builderDecision.builder ? { builder: builderDecision.builder } : {}),
+    }
   );
 
   const data = parseOrderResponse(response, coin, side, size, price);
-  const warning = getOrderRejectionWarning(data);
-  return { ok: true, type: 'order_result', data, ...(warning ? { warnings: [warning] } : {}) };
+  const notices = [];
+  if (builderDecision.notice) notices.push(builderDecision.notice);
+  const warnings = [];
+  if (builderDecision.warning) warnings.push(builderDecision.warning);
+  const rejectionWarning = getOrderRejectionWarning(data);
+  if (rejectionWarning) warnings.push(rejectionWarning);
+  return {
+    ok: true,
+    type: 'order_result',
+    data,
+    ...(notices.length ? { notices } : {}),
+    ...(warnings.length ? { warnings } : {}),
+  };
 }
 
 async function market(parsed, ctx) {
@@ -319,17 +392,58 @@ async function market(parsed, ctx) {
     orderType: { limit: { tif: 'Ioc' } }, // Market = IOC with slippage
   };
 
+  const builderDecision = await resolveBuilderForOrder(account.masterAddress, isTestnet);
+
   const response = await deps.exchangeClient.placeOrder(
     orderSpec, privateKey, account.agentAddress,
-    { isTestnet, cloid }
+    {
+      isTestnet,
+      cloid,
+      ...(builderDecision.builder ? { builder: builderDecision.builder } : {}),
+    }
   );
 
   const data = parseOrderResponse(response, coin, side, size, protectionPrice);
+  const notices = [];
+  if (builderDecision.notice) notices.push(builderDecision.notice);
   const warnings = [];
+  if (builderDecision.warning) warnings.push(builderDecision.warning);
   const rejectionWarning = getOrderRejectionWarning(data);
   if (rejectionWarning) warnings.push(rejectionWarning);
   warnings.push(`Market order executed as IOC @ ${wirePrice} (mid: ${mid}, slippage: ${slippagePct}%)`);
-  return { ok: true, type: 'order_result', data, warnings };
+  return {
+    ok: true,
+    type: 'order_result',
+    data,
+    ...(notices.length ? { notices } : {}),
+    warnings,
+  };
+}
+
+async function builderApproval(parsed, ctx) {
+  const isTestnet = ctx?.network === 'testnet';
+  const user = resolveBuilderApprovalUser(parsed);
+  const builderAddress = resolveBuilderAddress(parsed);
+  const maxBuilderFee = normalizeMaxBuilderFee(
+    await deps.infoClient.getMaxBuilderFee(user, builderAddress, { isTestnet }),
+  );
+  const approved = maxBuilderFee > 0;
+  const fee = approved ? Math.min(BUILDER_FEE, maxBuilderFee) : null;
+  const notices = [];
+  if (!approved) notices.push(BUILDER_NOT_APPROVED_MESSAGE);
+
+  return {
+    ok: true,
+    type: 'builder-approval',
+    data: {
+      user,
+      builderAddress,
+      maxBuilderFee,
+      approved,
+      orderBuilder: approved ? { b: builderAddress, f: fee } : null,
+    },
+    ...(notices.length ? { notices } : {}),
+  };
 }
 
 async function cancel(parsed, ctx) {
@@ -491,6 +605,7 @@ async function approveBuilder(parsed, ctx) {
 }
 
 export default {
+  builderApproval,
   limit, market, cancel, cancelAll, cancelByCloid,
   setLeverage, topupIsolated, approveBuilder,
 };

@@ -204,6 +204,14 @@ describe('parser', () => {
       assert.equal(r.action, 'approve-builder');
     });
 
+    it('parses builder-approval with explicit target', () => {
+      const r = parseInput('dpro-hl builder-approval main --builder 0xf36534b07ea0cbbe52194374e7387956fb97ad53');
+      assert.equal(r.domain, 'trade');
+      assert.equal(r.action, 'builder-approval');
+      assert.equal(r.target, 'main');
+      assert.equal(r.flags.builder, '0xf36534b07ea0cbbe52194374e7387956fb97ad53');
+    });
+
     it('throws on missing side', () => {
       assert.throws(() => parseInput('dpro-hl perp order limit 0.01 BTC 50000'), /side/i);
     });

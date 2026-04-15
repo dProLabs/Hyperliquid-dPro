@@ -320,6 +320,19 @@ const formatters = {
   topup_result: (d) => `Topped up ${d.coin} isolated margin by ${fmtUsd(d.usd)}`,
 
   'approve-builder_result': (d) => `Builder fee approved for ${d.builderAddress}`,
+  'builder-approval': (d) => {
+    const status = d.approved ? 'approved' : 'not approved';
+    const lines = [
+      `Builder approval: ${status}`,
+      `User: ${d.user}`,
+      `Builder: ${d.builderAddress}`,
+      `maxBuilderFee: ${d.maxBuilderFee}`,
+    ];
+    if (d.orderBuilder) {
+      lines.push(`Order builder payload: ${JSON.stringify(d.orderBuilder)}`);
+    }
+    return lines.join('\n');
+  },
   transfer_result: (d) => `Transferred ${fmtUsd(d.usd)} from ${d.from} to ${d.to}.`,
 
   'onchain-ping': (d) => `Onchain ping OK\nPath: ${d.path}`,
@@ -524,6 +537,9 @@ export function formatResult(result, mode = 'text') {
   const formatter = formatters[result.type];
   if (formatter) {
     let output = formatter(result.data);
+    if (result.notices?.length) {
+      output += '\n\nReminder:\n' + result.notices.map(n => `  - ${n}`).join('\n');
+    }
     if (result.warnings?.length) {
       output += '\n\nWarnings:\n' + result.warnings.map(w => `  ⚠ ${w}`).join('\n');
     }
