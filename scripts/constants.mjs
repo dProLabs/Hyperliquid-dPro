@@ -3,7 +3,7 @@ export const MAINNET_URL = 'https://api.hyperliquid.xyz';
 export const TESTNET_URL = 'https://api.hyperliquid-testnet.xyz';
 
 // Builder code
-export const BUILDER_ADDRESS = '0x8c967E73E7B15087c42A10D344cFf4c96D877f1D';
+export const BUILDER_ADDRESS = '0xf36534b07ea0cbbe52194374e7387956fb97ad53';
 export const BUILDER_FEE = 1; // fee in tenths of a basis point (1 = 0.1bp = 0.001%)
 export const BUILDER_MAX_FEE_RATE = '0.01%'; // max fee rate for approveBuilderFee
 

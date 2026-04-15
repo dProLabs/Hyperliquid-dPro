@@ -36,7 +36,7 @@ export function __resetExchangeClientFactoryForTest() {
 }
 
 export async function placeOrder(orderSpec, privateKeyHex, _agentAddress, opts = {}) {
-  const { isTestnet = false, cloid } = opts;
+  const { isTestnet = false, cloid, builder } = opts;
   const exchange = exchangeClientFactory(privateKeyHex, { isTestnet });
   const order = {
     a: orderSpec.asset,
@@ -47,11 +47,15 @@ export async function placeOrder(orderSpec, privateKeyHex, _agentAddress, opts =
     t: orderSpec.orderType,
   };
   if (cloid) order.c = cloid;
+  const payload = {
+    orders: [order],
+    grouping: 'na',
+  };
+  if (builder?.b && Number.isFinite(Number(builder?.f))) {
+    payload.builder = { b: builder.b, f: Number(builder.f) };
+  }
   try {
-    return await exchange.order({
-      orders: [order],
-      grouping: 'na',
-    });
+    return await exchange.order(payload);
   } catch (err) {
     throw classifyAndWrapError(err, 'Order rejected');
   }

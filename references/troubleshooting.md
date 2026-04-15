@@ -354,8 +354,10 @@ Use this class when the request could not reliably reach the upstream service or
 **Direct fix**
 1. Confirm the selected API account
 2. Confirm password availability
-3. Re-state that builder approval is a persistent account-affecting action
-4. Retry only after explicit confirmation from the user
+3. Check current approval first:
+   - `dpro-hl builder-approval [alias|masterAddress]`
+4. Re-state that builder approval is a persistent account-affecting action
+5. Retry only after explicit confirmation from the user
 
 **Retry guidance**
 - do not auto-retry

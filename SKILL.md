@@ -146,6 +146,7 @@ Use for:
 - inspect positions
 - inspect orders or fills
 - inspect portfolio
+- inspect builder authorization state
 - check whether an API account exists before a write
 
 Examples:
@@ -153,6 +154,7 @@ Examples:
 - `dpro-hl positions`
 - `dpro-hl balances main`
 - `dpro-hl fills main --limit 20`
+- `dpro-hl builder-approval main`
 
 ### 3. Transfer branch
 Use for:
@@ -416,6 +418,7 @@ Before any write:
 - for trading writes, confirm `api-wallet password` availability
 - for trading writes, resolve exact symbol
 - for trading writes, confirm market namespace is correct
+- for trading writes, check builder approval via `maxBuilderFee` using the selected account `masterAddress`
 
 ### Step 3: run preflight checks
 At minimum check:
@@ -426,6 +429,7 @@ At minimum check:
 - price completeness for limit orders
 - slippage completeness for market orders when applicable
 - market compatibility for leverage and isolated actions
+- for trading writes, if `maxBuilderFee > 0`, attach builder payload `{"b": <builderAddress>, "f": <fee>}`; if `maxBuilderFee = 0`, submit without builder payload
 
 For perp / HIP-3 order writes:
 - do not hard-block solely because displayed `perpEquity` is `0`
@@ -441,6 +445,7 @@ Before submission, summarize:
 - side when applicable
 - size when applicable
 - price or slippage
+- builder payload decision (`attached` vs `not attached`, with `b` and `f` when attached)
 - relevant mode flags
 - whether the action has persistent account effect
 
@@ -527,6 +532,7 @@ Rules:
 - reduce-only is not valid unless the implementation explicitly supports it for spot
 - leverage and isolated margin commands are not valid on spot
 - if the user asks for leverage on spot, reject and explain the mismatch
+- before submit, check `maxBuilderFee` with user=`masterAddress` and builder=`BUILDER_ADDRESS`; attach `{"b": builder, "f": fee}` only when approved (`maxBuilderFee > 0`)
 
 ### Perp orders
 Use `dpro-hl perp order ...`.
@@ -536,6 +542,7 @@ Rules:
 - `market` uses bounded slippage / IOC-limit semantics
 - `reduce-only` is valid where supported
 - unified-account behavior: never require a pre-trade "transfer to perp" check based only on `perpEquity`; if the venue rejects for funding, return that rejection and guide the user to add collateral or reduce size
+- before submit, check `maxBuilderFee` with user=`masterAddress` and builder=`BUILDER_ADDRESS`; attach `{"b": builder, "f": fee}` only when approved (`maxBuilderFee > 0`)
 
 ### HIP-3 orders
 Use `dpro-hl hip3 order ...`.
@@ -545,9 +552,14 @@ Rules:
 - do not remap HIP-3 symbols into non-HIP-3 symbols
 - leverage and isolated margin are valid only for HIP-3 perp-style instruments where supported
 - if the target HIP-3 asset is spot-like and not perp-style, reject leverage/margin operations
+- before submit, check `maxBuilderFee` with user=`masterAddress` and builder=`BUILDER_ADDRESS`; attach `{"b": builder, "f": fee}` only when approved (`maxBuilderFee > 0`)
 
 ### Approve builder
 Treat `dpro-hl approve-builder` as a persistent account-affecting action.
+
+Use `dpro-hl builder-approval [alias|masterAddress] [--builder <builderAddress>]` to read whether a user already approved a builder.
+
+When `builder-approval` returns `maxBuilderFee = 0`, explicitly inform the user: "This account has not approved the builder yet. Please log in to https://www.d.pro/ to get trading fee discounts."
 
 Before execution, clearly state:
 - that builder approval changes future account trading behavior or fee routing capability

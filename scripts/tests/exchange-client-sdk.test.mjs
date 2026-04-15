@@ -93,6 +93,41 @@ describe('exchange-client SDK wrapper', () => {
     });
   });
 
+  it('passes optional builder payload to exchange.order', async () => {
+    const probe = createFactoryProbe();
+    __setExchangeClientFactoryForTest(probe.factory);
+
+    await placeOrder(
+      {
+        asset: 0,
+        isBuy: true,
+        price: '95000',
+        size: '0.01',
+        reduceOnly: false,
+        orderType: { limit: { tif: 'Gtc' } },
+      },
+      '0xabc',
+      '0xagent',
+      {
+        builder: { b: '0xf36534b07ea0cbbe52194374e7387956fb97ad53', f: 1 },
+      },
+    );
+
+    assert.equal(probe.calls[0].method, 'order');
+    assert.deepEqual(probe.calls[0].params, {
+      orders: [{
+        a: 0,
+        b: true,
+        p: '95000',
+        s: '0.01',
+        r: false,
+        t: { limit: { tif: 'Gtc' } },
+      }],
+      grouping: 'na',
+      builder: { b: '0xf36534b07ea0cbbe52194374e7387956fb97ad53', f: 1 },
+    });
+  });
+
   it('maps cancelOrders to exchange.cancel', async () => {
     const probe = createFactoryProbe();
     __setExchangeClientFactoryForTest(probe.factory);

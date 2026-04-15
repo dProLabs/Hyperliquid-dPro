@@ -233,6 +233,7 @@ dpro-hl spot order market sell 1 HYPE --slippage 0.3
 - Spot does not support leverage-management commands.
 - Reject leverage or isolated-margin operations on spot.
 - `--reduce-only` is not part of the spot command surface unless explicitly added by the implementation.
+- Before submit, check `maxBuilderFee(user=masterAddress,builder=BUILDER_ADDRESS)`; attach `builder: { b, f }` only when fee > 0.
 
 ---
 
@@ -279,6 +280,7 @@ dpro-hl perp order market sell 1 ETH --slippage 0.3 --reduce-only
 **Rules:**
 - `set-leverage` and `topup-isolated` are valid for perps.
 - `topup-isolated` requires isolated-margin mode.
+- Before submit, check `maxBuilderFee(user=masterAddress,builder=BUILDER_ADDRESS)`; attach `builder: { b, f }` only when fee > 0.
 
 **Examples:**
 ```bash
@@ -332,6 +334,7 @@ dpro-hl hip3 order market sell 1 xyz:TSLA --slippage 0.5 --reduce-only
 - HIP-3 is its own trading namespace.
 - Do not rewrite HIP-3 symbols into non-HIP-3 symbols.
 - `set-leverage` and `topup-isolated` are only valid for supported perp-style HIP-3 instruments, not all HIP-3 assets.
+- Before submit, check `maxBuilderFee(user=masterAddress,builder=BUILDER_ADDRESS)`; attach `builder: { b, f }` only when fee > 0.
 
 **Examples:**
 ```bash
@@ -348,6 +351,16 @@ Approve builder fee capability for the account.
 **Rules:**
 - Treat builder approval as a persistent account-affecting action.
 - Use explicit confirmation before execution in agent-driven flows.
+
+### `dpro-hl builder-approval [alias|masterAddress] [--builder <builderAddress>]`
+
+Check whether the selected user has already authorized the builder.
+
+**Rules:**
+- Resolve `user` from the selected account's `masterAddress` (or explicit address).
+- Query `maxBuilderFee` using `user` and the selected `builder` address.
+- `maxBuilderFee > 0` means approved; use it to decide whether to attach `{"b": builder, "f": fee}` to orders.
+- When `maxBuilderFee = 0`, explicitly inform the user: "This account has not approved the builder yet. Please log in to https://www.d.pro/ to get trading fee discounts."
 
 ---
 
