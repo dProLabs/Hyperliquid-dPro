@@ -79,6 +79,98 @@ describe('onchain format', () => {
     assert.ok(output.includes('0xabc'));
   });
 
+  it('formats onchain spot-meta deprecation notice', () => {
+    const output = formatResult({
+      ok: true,
+      type: 'onchain-spot-meta-deprecated',
+      data: { message: 'deprecated endpoint' },
+    });
+    assert.ok(output.includes('deprecated endpoint'));
+  });
+
+  it('formats onchain address tags', () => {
+    const output = formatResult({
+      ok: true,
+      type: 'onchain-address-tags',
+      data: {
+        path: '/api/v1/hl/meta/address-tags',
+        payload: {
+          '0x1': ['Smart'],
+          '0x2': ['Whale'],
+        },
+      },
+    });
+    assert.ok(output.includes('Onchain address tags'));
+    assert.ok(output.includes('0x1'));
+    assert.ok(output.includes('Smart'));
+  });
+
+  it('formats onchain orders chart table', () => {
+    const output = formatResult({
+      ok: true,
+      type: 'onchain-orders-chart',
+      data: {
+        path: '/api/v1/hl/orders/chart',
+        query: { coin: 'BTC', type: 'book' },
+        payload: {
+          coin: 'BTC',
+          type: 'book',
+          heatmap: [
+            {
+              priceBinIndex: 1,
+              priceBinStart: 100,
+              priceBinEnd: 110,
+              orderValue: 1234,
+              ordersCount: 3,
+            },
+          ],
+        },
+      },
+    });
+    assert.ok(output.includes('Onchain orders chart'));
+    assert.ok(output.includes('BTC'));
+    assert.ok(output.includes('Rows: 1'));
+  });
+
+  it('formats onchain liqmap timeline table', () => {
+    const output = formatResult({
+      ok: true,
+      type: 'onchain-liqmap-timeline',
+      data: {
+        path: '/api/v1/hl/liqmap/timeline',
+        payload: [
+          {
+            coin: 'BTC',
+            snapshotHeight: 123,
+            recordedAt: '2025-01-02T00:00:00.000Z',
+            bins: [{}, {}],
+          },
+        ],
+      },
+    });
+    assert.ok(output.includes('Onchain liqmap timeline'));
+    assert.ok(output.includes('BTC'));
+    assert.ok(output.includes('Rows: 1'));
+  });
+
+  it('formats onchain trending all-market summary', () => {
+    const output = formatResult({
+      ok: true,
+      type: 'onchain-trending',
+      data: {
+        path: '/api/v1/hl/trending',
+        payload: {
+          period: '1h',
+          spot: { items: [{ coin: 'PURR' }], pagination: { page: 1, limit: 50, total: 1 } },
+          perp: { items: [{ coin: 'BTC' }, { coin: 'ETH' }], pagination: { page: 1, limit: 50, total: 2 } },
+        },
+      },
+    });
+    assert.ok(output.includes('Onchain trending (all)'));
+    assert.ok(output.includes('spot'));
+    assert.ok(output.includes('perp'));
+  });
+
   it('formats leaderboard rows with ethAddress and windowPerformances', () => {
     const output = formatResult({
       ok: true,

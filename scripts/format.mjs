@@ -125,6 +125,31 @@ function getLeaderboardMetric(row, sortField = 'pnl_day') {
   return row.pnl ?? row.pnL ?? row.value ?? row.accountValue ?? '—';
 }
 
+function normalizeOrdersPayload(payload) {
+  const unwrapped = unwrapOnchainPayload(payload);
+  if (!unwrapped || typeof unwrapped !== 'object' || Array.isArray(unwrapped)) {
+    return { coin: '—', orders: [], pagination: null };
+  }
+  const orders = Array.isArray(unwrapped.orders)
+    ? unwrapped.orders
+    : Array.isArray(unwrapped.items)
+      ? unwrapped.items
+      : firstArray(unwrapped);
+  return {
+    coin: unwrapped.coin || '—',
+    orders,
+    pagination: unwrapped.pagination || null,
+  };
+}
+
+function formatPagination(pagination) {
+  if (!pagination || typeof pagination !== 'object') return '—';
+  const page = pagination.page ?? '—';
+  const limit = pagination.limit ?? '—';
+  const total = pagination.total ?? '—';
+  return `page=${page}, limit=${limit}, total=${total}`;
+}
+
 // --- Result formatters by type ---
 
 const formatters = {
@@ -308,6 +333,7 @@ const formatters = {
     if (!preview.length) return 'Onchain mids: empty';
     return `Onchain mids (${entries.length})\n\n` + renderTable(['Coin', 'Mid'], preview, [1]);
   },
+  'onchain-spot-meta-deprecated': (d) => d.message,
   'onchain-spot-meta': (d) => {
     const payload = unwrapOnchainPayload(d.payload) || {};
     const universe = Array.isArray(payload.universe) ? payload.universe : firstArray(payload);
@@ -347,6 +373,64 @@ const formatters = {
     ]);
     return `Onchain perp holders\nPath: ${d.path}\n\n` + renderTable(['Address', 'Size', 'Rank'], tableRows);
   },
+  'onchain-address-tags': (d) => {
+    const payload = unwrapOnchainPayload(d.payload);
+    const map = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
+    const entries = Object.entries(map);
+    if (!entries.length) return 'Onchain address tags: empty';
+    const rows = entries.slice(0, 10).map(([address, tags]) => [
+      address,
+      Array.isArray(tags) ? tags.join(', ') : String(tags || '—'),
+    ]);
+    return `Onchain address tags\nPath: ${d.path}\nEntries: ${entries.length}\n\n`
+      + renderTable(['Address', 'Tags'], rows);
+  },
+  'onchain-orders-book': (d) => {
+    const normalized = normalizeOrdersPayload(d.payload);
+    if (!normalized.orders.length) {
+      return `Onchain orders (book)\nPath: ${d.path}\nCoin: ${normalized.coin}\nNo orders.`;
+    }
+    const rows = normalized.orders.slice(0, 20).map((row) => ([
+      row.oid ?? '—',
+      row.side ?? '—',
+      fmtNum(row.size ?? row.sz ?? row.origSize, 4),
+      fmtPx(row.price ?? row.limitPx),
+      row.isTrigger ? 'yes' : 'no',
+    ]));
+    return `Onchain orders (book)\nPath: ${d.path}\nCoin: ${normalized.coin}\nPagination: ${formatPagination(normalized.pagination)}\n\n`
+      + renderTable(['OID', 'Side', 'Size', 'Price', 'Trigger'], rows, [2, 3]);
+  },
+  'onchain-orders-untriggered': (d) => {
+    const normalized = normalizeOrdersPayload(d.payload);
+    if (!normalized.orders.length) {
+      return `Onchain orders (untriggered)\nPath: ${d.path}\nCoin: ${normalized.coin}\nNo orders.`;
+    }
+    const rows = normalized.orders.slice(0, 20).map((row) => ([
+      row.oid ?? '—',
+      row.side ?? '—',
+      fmtNum(row.size ?? row.sz ?? row.origSize, 4),
+      fmtPx(row.price ?? row.limitPx),
+      row.triggerPx ?? '—',
+    ]));
+    return `Onchain orders (untriggered)\nPath: ${d.path}\nCoin: ${normalized.coin}\nPagination: ${formatPagination(normalized.pagination)}\n\n`
+      + renderTable(['OID', 'Side', 'Size', 'Price', 'Trigger Px'], rows, [2, 3, 4]);
+  },
+  'onchain-orders-chart': (d) => {
+    const payload = unwrapOnchainPayload(d.payload) || {};
+    const heatmap = Array.isArray(payload.heatmap) ? payload.heatmap : [];
+    if (!heatmap.length) {
+      return `Onchain orders chart\nPath: ${d.path}\nCoin: ${payload.coin || d.query?.coin || '—'}\nNo chart bars.`;
+    }
+    const rows = heatmap.slice(0, 20).map((r) => ([
+      r.priceBinIndex ?? '—',
+      fmtPx(r.priceBinStart),
+      fmtPx(r.priceBinEnd),
+      fmtNum(r.orderValue, 2),
+      r.ordersCount ?? '—',
+    ]));
+    return `Onchain orders chart\nPath: ${d.path}\nCoin: ${payload.coin || d.query?.coin || '—'}\nType: ${payload.type || d.query?.type || 'book'}\nRows: ${heatmap.length}\n\n`
+      + renderTable(['Bin', 'Start', 'End', 'Order Value', 'Orders'], rows, [0, 1, 2, 3, 4]);
+  },
   'onchain-liquidation-map': (d) => {
     const payload = unwrapOnchainPayload(d.payload) || {};
     const heatmap = Array.isArray(payload.heatmap) ? payload.heatmap : firstArray(payload);
@@ -367,6 +451,43 @@ const formatters = {
     }
     if (payload.url) return `Onchain liquidation map\nPath: ${d.path}\nURL: ${payload.url}`;
     return `Onchain liquidation map\nPath: ${d.path}\n` + JSON.stringify(payload, null, 2);
+  },
+  'onchain-liqmap-timeline': (d) => {
+    const rows = firstArray(unwrapOnchainPayload(d.payload));
+    if (!rows.length) return `Onchain liqmap timeline\nPath: ${d.path}\nNo snapshots.`;
+    const tableRows = rows.slice(0, 20).map((r) => [
+      r.coin || d.query?.coin || '—',
+      r.snapshotHeight ?? r.height ?? '—',
+      r.recordedAt ? new Date(r.recordedAt).toISOString().slice(0, 19).replace('T', ' ') : '—',
+      Array.isArray(r.bins) ? r.bins.length : '—',
+    ]);
+    return `Onchain liqmap timeline\nPath: ${d.path}\nRows: ${rows.length}\n\n`
+      + renderTable(['Coin', 'Snapshot', 'Recorded At', 'Bins'], tableRows, [1, 3]);
+  },
+  'onchain-trending': (d) => {
+    const payload = unwrapOnchainPayload(d.payload) || {};
+    const market = d.query?.market || payload.market || 'all';
+    if (market === 'spot' || market === 'perp') {
+      const items = Array.isArray(payload.items) ? payload.items : [];
+      if (!items.length) return `Onchain trending (${market})\nPath: ${d.path}\nNo items.`;
+      const rows = items.slice(0, 20).map((item, idx) => [
+        idx + 1,
+        item.coin || item.symbol || '—',
+        fmtPct(item.changePct ?? item.change24h ?? item.priceChangePct ?? 0),
+        fmtNum(item.volume ?? item.volume24h ?? item.turnover, 2),
+      ]);
+      return `Onchain trending (${market})\nPath: ${d.path}\nPeriod: ${payload.period || d.query?.period || '1h'}\nPagination: ${formatPagination(payload.pagination)}\n\n`
+        + renderTable(['Rank', 'Coin', 'Change', 'Volume'], rows, [0, 2, 3]);
+    }
+
+    const spotItems = Array.isArray(payload.spot?.items) ? payload.spot.items : [];
+    const perpItems = Array.isArray(payload.perp?.items) ? payload.perp.items : [];
+    const rows = [
+      ['spot', spotItems.length, formatPagination(payload.spot?.pagination)],
+      ['perp', perpItems.length, formatPagination(payload.perp?.pagination)],
+    ];
+    return `Onchain trending (all)\nPath: ${d.path}\nPeriod: ${payload.period || d.query?.period || '1h'}\n\n`
+      + renderTable(['Market', 'Items', 'Pagination'], rows, [1]);
   },
   'onchain-leaderboard': (d) => {
     const rows = firstArray(unwrapOnchainPayload(d.payload)).slice(0, 10);

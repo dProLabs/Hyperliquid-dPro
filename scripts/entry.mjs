@@ -43,7 +43,9 @@ export function __shouldClearPasswordCacheForTest(err) {
   return (
     message.includes('wrong password')
     || message.includes('decryption failed')
+    || message.includes('master password')
     || message.includes('master wallet password')
+    || message.includes('api password')
     || message.includes('api wallet password')
   );
 }

@@ -23,7 +23,7 @@ The onchain command group is:
 - **read-only**
 - backed by an allowlisted subset of the dPro API
 - fixed to the dPro public base URL
-- independent from Hyperliquid API-wallet auth
+- independent from Hyperliquid API-wallet credentials
 
 Use this reference only for commands under:
 
@@ -50,12 +50,19 @@ Do not prompt for account selection, password, or API-wallet setup for onchain c
 | `dpro-hl onchain ping` | GET | `/api/v1` | basic reachability |
 | `dpro-hl onchain health` | GET | `/api/v1/health` | service health |
 | `dpro-hl onchain mids` | GET | `/api/v1/hl/prices/mids` | current mids map |
-| `dpro-hl onchain spot-meta` | GET | `/api/v1/hl/meta/spot` | spot metadata |
+| `dpro-hl onchain spot-meta` | local warning | n/a | deprecated compatibility alias |
 | `dpro-hl onchain perps-meta` | GET | `/api/v1/hl/meta/perps-universe` | perp universe metadata |
+| `dpro-hl onchain address-tags` | GET | `/api/v1/hl/meta/address-tags` | address tag map |
 | `dpro-hl onchain spot-holders <coin>` | GET | `/api/v1/hl/spot/holders` | spot holder rows |
 | `dpro-hl onchain spot-holder-counts` | GET | `/api/v1/hl/spot/holders/counts` | spot holder counts by asset |
 | `dpro-hl onchain perp-holders <coin>` | GET | `/api/v1/hl/perp/holders` | perp holder rows |
-| `dpro-hl onchain liquidation-map <coin>` | GET | `/api/v1/hl/perp/liquidation-map` | liquidation heatmap bins |
+| `dpro-hl onchain orders-book <coin>` | GET | `/api/v1/hl/orders/book` | paginated order book rows |
+| `dpro-hl onchain orders-untriggered <coin>` | GET | `/api/v1/hl/orders/untriggered` | paginated conditional order rows |
+| `dpro-hl onchain orders-chart <coin>` | GET | `/api/v1/hl/orders/chart` | order chart bins + cumulative curves |
+| `dpro-hl onchain liqmap <coin>` | GET | `/api/v1/hl/liqmap` | liquidation heatmap bins |
+| `dpro-hl onchain liquidation-map <coin>` | GET | `/api/v1/hl/liqmap` | compatibility alias for `liqmap` |
+| `dpro-hl onchain liqmap-timeline <coin>` | GET | `/api/v1/hl/liqmap/timeline` | historical liquidation snapshots |
+| `dpro-hl onchain trending` | GET | `/api/v1/hl/trending` | spot/perp trending rows |
 | `dpro-hl onchain leaderboard` | GET | `/api/v1/leaderboard` | leaderboard rows |
 
 Only these commands are in scope for the onchain branch.
@@ -140,11 +147,11 @@ Expected behavior:
 - do not emit `NaN` rows
 
 ### `dpro-hl onchain spot-meta`
-Use for spot market metadata.
+`/api/v1/hl/meta/spot` is removed upstream.
 
 Expected behavior:
-- return normalized spot metadata rows or payload summary
-- preserve the raw structure for downstream use if requested
+- return a local deprecation warning
+- suggest replacements: `spot-holder-counts`, `markets ls`, or `perps-meta`
 
 ### `dpro-hl onchain perps-meta`
 Use for perp universe metadata.
@@ -158,6 +165,7 @@ Use for spot holder distribution for a single asset.
 
 Expected behavior:
 - require an exact coin
+- support optional `order` and `address` filters
 - derive `rank` when missing
 - apply pagination offset to derived rank when needed
 
@@ -174,14 +182,40 @@ Use for perp holder distribution for a single asset.
 Expected behavior:
 - require an exact coin
 - normalize namespaced HIP-3 perp coins when applicable
+- support optional address filter
 - derive `rank` when missing
 - apply sorting and ordering consistently
 
-### `dpro-hl onchain liquidation-map <coin>`
+### `dpro-hl onchain orders-book <coin>`
+Use for paginated order book snapshots.
+
+Expected behavior:
+- require an exact coin
+- support paging via `page` / `limit`
+- render key order fields in table form
+
+### `dpro-hl onchain orders-untriggered <coin>`
+Use for paginated untriggered/conditional orders.
+
+Expected behavior:
+- require an exact coin
+- support paging via `page` / `limit`
+- render trigger-related fields when available
+
+### `dpro-hl onchain orders-chart <coin>`
+Use for order-value distribution and cumulative depth curves.
+
+Expected behavior:
+- require an exact coin
+- support `type=book|untriggered`
+- render heatmap bins in tabular output
+
+### `dpro-hl onchain liqmap <coin>`
 Use for liquidation heatmap inspection.
 
 Expected behavior:
 - require an exact coin
+- support `groupBy=all|smart|whale`
 - render a normalized table with at least:
   - `Coin`
   - `Bin`
@@ -190,6 +224,21 @@ Expected behavior:
   - `Liq Value`
   - `Positions`
   - `Segment`
+
+### `dpro-hl onchain liqmap-timeline <coin>`
+Use for historical liquidation map snapshots.
+
+Expected behavior:
+- require exact coin and both `from`/`to` ISO timestamps
+- render snapshot time + height + bin coverage
+
+### `dpro-hl onchain trending`
+Use for trending market views.
+
+Expected behavior:
+- support `period=15m|1h|4h|24h`
+- support `market=all|spot|perp`
+- render grouped summaries for `all` and paginated tables for single-market mode
 
 ### `dpro-hl onchain leaderboard`
 Use for leaderboard views.
@@ -263,6 +312,21 @@ These are presentation targets, not strict upstream API schemas.
 | `metric` | selected metric or default metric |
 | `accountValue` | account value when available |
 
+### Orders
+| Field | Notes |
+|---|---|
+| `oid` | order id |
+| `side` | bid/ask indicator |
+| `size` | order size |
+| `price` | order price |
+
+### Trending
+| Field | Notes |
+|---|---|
+| `market` | spot/perp/all |
+| `period` | selected period |
+| `items` | item rows or grouped totals |
+
 ---
 
 ## Failure Behavior
@@ -298,16 +362,22 @@ If the cause is unclear, consult `references/troubleshooting.md` and present:
 
 # prices and metadata
  dpro-hl onchain mids
- dpro-hl onchain spot-meta
  dpro-hl onchain perps-meta
+ dpro-hl onchain address-tags
 
 # holder distribution
- dpro-hl onchain spot-holders PURR --limit 5
+ dpro-hl onchain spot-holders PURR --order desc --limit 5
  dpro-hl onchain spot-holder-counts
- dpro-hl onchain perp-holders xyz:NVDA --limit 5 --order desc
+ dpro-hl onchain perp-holders xyz:NVDA --address 0xabc --limit 5 --order desc
+
+# orders and trending
+ dpro-hl onchain orders-book BTC --page 1 --limit 20
+ dpro-hl onchain orders-chart BTC --type book
+ dpro-hl onchain trending --period 1h --market all
 
 # liquidation map
- dpro-hl onchain liquidation-map xyz:TSLA
+ dpro-hl onchain liqmap xyz:TSLA --groupBy all
+ dpro-hl onchain liqmap-timeline BTC --from 2025-01-01T00:00:00Z --to 2025-01-07T00:00:00Z
 
 # leaderboard
  dpro-hl onchain leaderboard --limit 10 --sort pnl_day --order desc

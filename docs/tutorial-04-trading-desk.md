@@ -11,7 +11,7 @@ It doesn't cover trading strategies or answer questions like "should I buy now".
 Before starting to trade, just remember these 3 steps:
 - First confirm you have a tradable account
 - If you need to move funds between `spot` and `perp`, do the transfer
-- Finally decide whether you want to do `perp` or `hip-3` trading
+- Finally decide whether you want to do `spot`, `perp`, or `hip-3` trading
 
 If you remember this main line first, every subsequent step will be easier to understand.
 
@@ -126,11 +126,12 @@ If you plan to have the agent handle it through conversation, you can say:
 
 > I want to transfer 5 USD from perp back to spot. Please repeat the direction and amount first, and execute only after confirming it's correct.
 
-## Step 4: When Starting to Trade, First Distinguish Between Perp and Hip-3
+## Step 4: When Starting to Trade, First Distinguish Spot, Perp, and Hip-3
 
 Before placing orders, first distinguish which type of trading you're doing:
+- If you're trading spot assets, express it as `spot`
 - If you're trading perpetuals, express it as `perp`
-- If you're trading spot, express it as `hip-3`
+- If you're trading HIP-3 assets, express it as `hip-3`
 
 Both can be clearly expressed using natural language:
 - Trading asset
@@ -179,9 +180,24 @@ You can say:
 >   ⚠ Market order executed as IOC @ 2033.4 (mid: 2039.55, slippage: 0.3%)
 > ```
 
+### If You're Doing Spot
+
+For spot, the key is to clearly say it's a `spot` order and include side, size, and price/slippage.
+
+You can say:
+
+**I want to place a spot limit order to buy 10 PURR at 0.08. Please repeat the order details first.**
+
+> **Execution Result**
+>
+> ```
+> Order resting: PURR buy 10 @ 0.0800 (oid: 344740827951)
+> ```
+
 ### If You're Doing Hip-3
 
-`hip-3` here can be understood as spot trading. The key is to first clearly state the trading asset, direction, and amount.
+`hip-3` here is an independent market namespace (not the same as standard `spot`).
+The key is to use namespaced symbols such as `xyz:NVDA`, and clearly state side, size, and price/slippage.
 
 You can say:
 
@@ -248,15 +264,16 @@ If you're starting to practice for the first time, you can practice in this orde
 4. If you need to transfer, prepare master-wallet password
 5. If you need to transfer, confirm direction and amount first
 6. Practice one perp trading expression first
-7. Then practice one hip-3 trading expression
-8. Finally practice viewing open orders and canceling orders
+7. Then practice one spot trading expression
+8. Then practice one hip-3 trading expression
+9. Finally practice viewing open orders and canceling orders
 
 ## What You'll Get
 
 After completing this tutorial, you should be clear about three things:
 - How to first determine whether you can start trading
 - When you need transfer and when you don't
-- How to express `perp` and `hip-3` trading intentions using natural language
+- How to express `spot`, `perp`, and `hip-3` trading intentions using natural language
 
 ## An Important Reminder
 

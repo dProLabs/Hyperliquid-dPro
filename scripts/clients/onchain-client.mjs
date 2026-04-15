@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { DEFAULT_TIMEOUT_MS } from '../constants.mjs';
-import { apiRejected, networkError } from '../errors.mjs';
+import { apiRejected, inputError, networkError } from '../errors.mjs';
 
 const OPENAPI_URL = new URL('../../docs/openapi.json', import.meta.url);
 const ONCHAIN_BASE_URL = 'https://api.d.pro/';
@@ -23,11 +23,17 @@ const FALLBACK_ALLOWLIST = new Set([
   '/api/v1',
   '/api/v1/health',
   '/api/v1/hl/prices/mids',
-  '/api/v1/hl/meta/spot',
+  '/api/v1/hl/meta/address-tags',
   '/api/v1/hl/meta/perps-universe',
+  '/api/v1/hl/trending',
   '/api/v1/hl/spot/holders',
   '/api/v1/hl/spot/holders/counts',
   '/api/v1/hl/perp/holders',
+  '/api/v1/hl/orders/book',
+  '/api/v1/hl/orders/untriggered',
+  '/api/v1/hl/orders/chart',
+  '/api/v1/hl/liqmap',
+  '/api/v1/hl/liqmap/timeline',
   '/api/v1/hl/perp/liquidation-map',
   '/api/v1/leaderboard',
 ]);

@@ -36,6 +36,22 @@ describe('onchain commands', () => {
     assert.ok(capturedUrl.includes('limit=5'));
   });
 
+  it('passes through spot-holders order and address filters', async () => {
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return jsonResponse({ rows: [] });
+    };
+
+    await onchain.spotHolders({
+      target: 'PURR',
+      flags: { order: 'asc', address: '0xabc' },
+    }, {});
+
+    assert.ok(capturedUrl.includes('order=asc'));
+    assert.ok(capturedUrl.includes('address=0xabc'));
+  });
+
   it('maps api non-2xx to API_REJECTED', async () => {
     globalThis.fetch = async () => jsonResponse({ error: 'bad request' }, 400);
 
@@ -95,5 +111,72 @@ describe('onchain commands', () => {
     }, {});
 
     assert.ok(capturedUrl.includes('coin=xyz%3ANVDA'));
+    assert.match(capturedUrl, /^https:\/\/api\.d\.pro\/api\/v1\/hl\/liqmap\?/);
+  });
+
+  it('builds liqmap-timeline query with from and to', async () => {
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return jsonResponse([]);
+    };
+
+    await onchain.liqmapTimeline({
+      target: 'BTC',
+      flags: { from: '2025-01-01T00:00:00Z', to: '2025-01-07T00:00:00Z' },
+    }, {});
+
+    assert.match(capturedUrl, /^https:\/\/api\.d\.pro\/api\/v1\/hl\/liqmap\/timeline\?/);
+    assert.ok(capturedUrl.includes('coin=BTC'));
+    assert.ok(capturedUrl.includes('from=2025-01-01T00%3A00%3A00Z'));
+    assert.ok(capturedUrl.includes('to=2025-01-07T00%3A00%3A00Z'));
+  });
+
+  it('builds orders-book query correctly', async () => {
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return jsonResponse({ orders: [] });
+    };
+
+    await onchain.ordersBook({
+      target: 'BTC',
+      flags: { page: '1', limit: '20' },
+    }, {});
+
+    assert.match(capturedUrl, /^https:\/\/api\.d\.pro\/api\/v1\/hl\/orders\/book\?/);
+    assert.ok(capturedUrl.includes('coin=BTC'));
+    assert.ok(capturedUrl.includes('page=1'));
+    assert.ok(capturedUrl.includes('limit=20'));
+  });
+
+  it('builds trending query correctly', async () => {
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return jsonResponse({ period: '1h', spot: { items: [] }, perp: { items: [] } });
+    };
+
+    await onchain.trending({ flags: { period: '1h', market: 'spot', page: '2', limit: '5' } }, {});
+
+    assert.match(capturedUrl, /^https:\/\/api\.d\.pro\/api\/v1\/hl\/trending\?/);
+    assert.ok(capturedUrl.includes('period=1h'));
+    assert.ok(capturedUrl.includes('market=spot'));
+    assert.ok(capturedUrl.includes('page=2'));
+    assert.ok(capturedUrl.includes('limit=5'));
+  });
+
+  it('returns local deprecation notice for spot-meta', async () => {
+    let called = false;
+    globalThis.fetch = async () => {
+      called = true;
+      return jsonResponse({});
+    };
+
+    const result = await onchain.spotMeta({ flags: {} }, {});
+
+    assert.equal(result.ok, true);
+    assert.equal(result.type, 'onchain-spot-meta-deprecated');
+    assert.equal(called, false);
   });
 });

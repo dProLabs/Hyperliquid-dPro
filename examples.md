@@ -220,7 +220,7 @@ Recommended practice:
 
 ## Onchain workflow
 
-Goal: inspect dPro onchain data without account authentication.
+Goal: inspect dPro onchain data without account credentials.
 
 ### 1. Check service status and mids
 
@@ -232,15 +232,24 @@ Goal: inspect dPro onchain data without account authentication.
 ### 2. Inspect holder distribution
 
 ```bash
- dpro-hl onchain spot-holders PURR --limit 5
- dpro-hl onchain perp-holders xyz:nvda --limit 5 --order desc
+ dpro-hl onchain spot-holders PURR --order desc --limit 5
+ dpro-hl onchain perp-holders xyz:nvda --address 0xabc --limit 5 --order desc
 ```
 
-### 3. Inspect leaderboard and liquidation data
+### 3. Inspect orders, trending, and liquidation data
+
+```bash
+ dpro-hl onchain orders-book BTC --page 1 --limit 20
+ dpro-hl onchain orders-chart BTC --type book
+ dpro-hl onchain trending --period 1h --market all
+ dpro-hl onchain liqmap xyz:TSLA --groupBy all
+ dpro-hl onchain liqmap-timeline BTC --from 2025-01-01T00:00:00Z --to 2025-01-07T00:00:00Z
+```
+
+### 4. Inspect leaderboard data
 
 ```bash
  dpro-hl onchain leaderboard --limit 10 --sort pnl_day --order desc
- dpro-hl onchain liquidation-map xyz:TSLA
 ```
 
 Notes:
