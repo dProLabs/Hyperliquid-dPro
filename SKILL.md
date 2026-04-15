@@ -58,7 +58,7 @@ Use for:
 
 ### `references/onchain.md`
 Use for:
-- fixed onchain base URL and auth rules
+- fixed onchain base URL and request rules
 - endpoint mapping
 - excluded paths
 - HIP-3 coin normalization
@@ -184,6 +184,9 @@ Examples:
 - `dpro-hl onchain health`
 - `dpro-hl onchain mids`
 - `dpro-hl onchain spot-holders PURR --limit 5`
+- `dpro-hl onchain orders-book BTC --page 1 --limit 20`
+- `dpro-hl onchain liqmap BTC --groupBy all`
+- `dpro-hl onchain trending --period 1h --market all`
 - `dpro-hl onchain leaderboard --limit 10`
 
 ## Market-type policy
@@ -564,7 +567,7 @@ For any `dpro-hl onchain ...` request:
 4. apply endpoint-specific response normalization when required
 5. never treat excluded paths as callable through this skill
 
-The onchain branch is read-only and requires no auth.
+The onchain branch is read-only and requires no account credentials.
 
 ---
 

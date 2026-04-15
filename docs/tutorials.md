@@ -1,11 +1,11 @@
 # Hyperliquid-dPro Tutorial Collection
 
-This set of tutorials is for users using this skill for the first time.
+This tutorial set is for first-time users of this skill.
 
-The goal is simple:
-- Start using with natural language
-- Learn the easiest parts first
-- Then gradually move into accounts, onchain data, and trading
+Goal:
+- Start with natural language commands.
+- Learn low-risk read workflows first.
+- Move into account setup, onchain analytics, and trading in order.
 
 ## Recommended Reading Order
 
@@ -18,25 +18,25 @@ The goal is simple:
 
 ### Tutorial 1: Learning to Read the Market First
 
-For people just starting out.
-You will first learn how to quickly check prices, order books, candlesticks, and market overview using a few sentences of natural language.
+For users starting from zero.
+You will learn how to check quotes, order books, candles, and movers quickly.
 
 ### Tutorial 2: Adding Addresses to Your Account List
 
-For people who want to observe public addresses.
-You will learn how to add readonly accounts and check positions, balances, orders, and trades.
+For users who want to observe public wallets first.
+You will learn readonly account setup and account-state queries.
 
 ### Tutorial 3: Reading Onchain Distribution
 
-For people already familiar with market and account queries.
-You will learn how to check onchain distribution, leaderboard, and liquidation heatmaps to get more complete information.
+For users already comfortable with market/account reads.
+You will learn onchain holder queries, order-distribution views, liquidation map views, and trending/leaderboard reads.
 
-### Tutorial 4: What to Do Before Starting to Trade
+### Tutorial 4: Trading Desk Setup
 
-For people ready to start trading.
-You will learn the basic sequence before trading: first confirm the account, then make settings, then place orders, cancel orders, and finally execute; and transfer funds between spot and perp when needed.
+For users ready to place real orders.
+You will learn account readiness checks, master-key requirements for transfers, and explicit trade namespaces (`spot`, `perp`, `hip3`).
 
 ## Usage Advice
 
-If you're new to this skill, don't rush to look at trading right away.
-Reading the first 3 tutorials in order before moving to the 4th will make it easier to understand and less prone to errors.
+If you are new, finish Tutorials 1-3 before trading.
+Then complete Tutorial 4 before executing live orders.

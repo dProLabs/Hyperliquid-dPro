@@ -86,7 +86,35 @@ const ACCOUNT_ACTIONS = new Set([
 ]);
 const TRADE_ACTIONS = new Set(['limit', 'market', 'cancel', 'cancel-all', 'cancel-by-cloid', 'set-leverage', 'topup-isolated', 'modify']);
 const TRADE_NAMESPACES = new Set(['spot', 'perp', 'hip3']);
-const ONCHAIN_ACTIONS = new Set(['ping', 'health', 'mids', 'spot-meta', 'perps-meta', 'spot-holders', 'spot-holder-counts', 'perp-holders', 'liquidation-map', 'leaderboard']);
+const ONCHAIN_ACTIONS = new Set([
+  'ping',
+  'health',
+  'mids',
+  'spot-meta',
+  'perps-meta',
+  'address-tags',
+  'spot-holders',
+  'spot-holder-counts',
+  'perp-holders',
+  'liquidation-map',
+  'liqmap',
+  'liqmap-timeline',
+  'orders-book',
+  'orders-untriggered',
+  'orders-chart',
+  'trending',
+  'leaderboard',
+]);
+const ONCHAIN_COIN_ACTIONS = new Set([
+  'spot-holders',
+  'perp-holders',
+  'liquidation-map',
+  'liqmap',
+  'liqmap-timeline',
+  'orders-book',
+  'orders-untriggered',
+  'orders-chart',
+]);
 const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
 // --- Structured command parsing ---
@@ -188,10 +216,13 @@ function parseStructured(tokens, flags, raw) {
     if (!action || !ONCHAIN_ACTIONS.has(action)) {
       throw unknownCommand(`Unknown onchain action: ${action || '(none)'}. Available: ${[...ONCHAIN_ACTIONS].join(', ')}`);
     }
+    const target = ONCHAIN_COIN_ACTIONS.has(action)
+      ? (tokens[2]?.toUpperCase() || null)
+      : (tokens[2] || null);
     return {
       domain: 'onchain',
       action,
-      target: tokens[2]?.toUpperCase() || null,
+      target,
       args: { rest: tokens.slice(3) },
       flags,
       raw,

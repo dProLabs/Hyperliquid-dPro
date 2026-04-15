@@ -38,6 +38,7 @@ For write failures, never blind-retry unless you have verified that the original
 | `Order has invalid price` | pricing / tick / normalization | use valid tick price or bounded market path | only after correction |
 | `Cannot set leverage on spot markets` | market-type mismatch | switch to `perp` or supported `hip3` perp | no, until corrected |
 | `NETWORK_ERROR` on read | transport | retry once, then check health | yes, once |
+| `spot-meta ... removed upstream` | endpoint deprecation | switch to `spot-holder-counts` / `markets ls` / `perps-meta` | no, command change required |
 | timeout on write | uncertain write state | inspect orders / fills first | not until verified |
 
 ---
@@ -47,7 +48,7 @@ For write failures, never blind-retry unless you have verified that the original
 ### 1. Symbol resolution errors
 Use this class when the command failed because the asset key is missing, malformed, stale, or mapped to the wrong namespace.
 
-### 2. Account / auth errors
+### 2. Account / credential errors
 Use this class when the command needs an API account, password, or decrypted key material and does not have it.
 
 ### 3. Market-type mismatch errors
@@ -125,6 +126,23 @@ Use this class when the request could not reliably reach the upstream service or
 **Retry guidance**
 - safe to retry after cache settings are corrected
 - do not print password value in logs or chat output
+
+---
+
+## `spot-meta` deprecation warning
+
+**Likely cause**
+- upstream `/api/v1/hl/meta/spot` endpoint was removed
+
+**Direct fix**
+1. Use one of the supported alternatives:
+   - `dpro-hl onchain spot-holder-counts`
+   - `dpro-hl markets ls`
+   - `dpro-hl onchain perps-meta`
+
+**Retry guidance**
+- do not retry `spot-meta` for data retrieval
+- switch to one of the replacement commands above
 
 ---
 
@@ -371,7 +389,7 @@ Use this fallback sequence:
 
 1. classify the error into one of:
    - symbol resolution
-   - account / auth
+   - account / credentials
    - market-type mismatch
    - pricing / validation
    - transport / upstream

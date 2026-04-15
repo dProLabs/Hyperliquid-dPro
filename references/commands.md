@@ -21,8 +21,6 @@ These flags can be used across commands when applicable.
 | `DPRO_HL_PASSWORD_CACHE_TTL_SEC` | Cache TTL in seconds | `21600` |
 | `DPRO_HL_PASSWORD_CACHE_FILE` | Override cache file path | `${HOME}/.config/dpro-hl/password-session.json` |
 
----
-
 ## Input Modes
 
 | Mode | Example |
@@ -358,12 +356,19 @@ Approve builder fee capability for the account.
 ### `dpro-hl onchain ping`
 ### `dpro-hl onchain health`
 ### `dpro-hl onchain mids`
-### `dpro-hl onchain spot-meta`
+### `dpro-hl onchain spot-meta` (deprecated compatibility alias)
 ### `dpro-hl onchain perps-meta`
-### `dpro-hl onchain spot-holders <coin> [--page N] [--limit N]`
+### `dpro-hl onchain address-tags`
+### `dpro-hl onchain spot-holders <coin> [--order asc|desc] [--address <wallet>] [--page N] [--limit N]`
 ### `dpro-hl onchain spot-holder-counts`
-### `dpro-hl onchain perp-holders <coin> [--sortBy field] [--order asc|desc] [--page N] [--limit N]`
-### `dpro-hl onchain liquidation-map <coin>`
+### `dpro-hl onchain perp-holders <coin> [--sortBy value|pnl] [--order asc|desc] [--address <wallet>] [--page N] [--limit N]`
+### `dpro-hl onchain orders-book <coin> [--page N] [--limit N]`
+### `dpro-hl onchain orders-untriggered <coin> [--page N] [--limit N]`
+### `dpro-hl onchain orders-chart <coin> [--type book|untriggered]`
+### `dpro-hl onchain liqmap <coin> [--groupBy all|smart|whale]`
+### `dpro-hl onchain liquidation-map <coin> [--groupBy all|smart|whale]` (compat alias)
+### `dpro-hl onchain liqmap-timeline <coin> --from <ISO> --to <ISO>`
+### `dpro-hl onchain trending [--period 15m|1h|4h|24h] [--market all|spot|perp] [--page N] [--limit N]`
 ### `dpro-hl onchain leaderboard [--page N] [--limit N] [--sort field] [--order asc|desc]`
 
 For endpoint mapping and response-shape details, see [`onchain.md`](onchain.md).

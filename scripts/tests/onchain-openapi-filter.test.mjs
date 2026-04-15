@@ -7,6 +7,8 @@ describe('onchain openapi filter', () => {
     const allowlist = await getAllowedOnchainGetPaths();
     assert.equal(allowlist.has('/api/v1/health'), true);
     assert.equal(allowlist.has('/api/v1/hl/prices/mids'), true);
+    assert.equal(allowlist.has('/api/v1/hl/orders/book'), true);
+    assert.equal(allowlist.has('/api/v1/hl/trending'), true);
     assert.equal(allowlist.has('/api/v1/leaderboard'), true);
   });
 

@@ -258,6 +258,23 @@ describe('parser', () => {
       assert.equal(r.flags.order, 'desc');
       assert.equal(r.flags.page, '2');
     });
+
+    it('parses onchain orders-book command', () => {
+      const r = parseInput('dpro-hl onchain orders-book BTC --page 1 --limit 20');
+      assert.equal(r.domain, 'onchain');
+      assert.equal(r.action, 'orders-book');
+      assert.equal(r.target, 'BTC');
+      assert.equal(r.flags.limit, '20');
+    });
+
+    it('parses onchain liqmap-timeline command', () => {
+      const r = parseInput('dpro-hl onchain liqmap-timeline BTC --from 2025-01-01 --to 2025-01-07');
+      assert.equal(r.domain, 'onchain');
+      assert.equal(r.action, 'liqmap-timeline');
+      assert.equal(r.target, 'BTC');
+      assert.equal(r.flags.from, '2025-01-01');
+      assert.equal(r.flags.to, '2025-01-07');
+    });
   });
 
   describe('natural language', () => {

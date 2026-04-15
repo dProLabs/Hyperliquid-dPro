@@ -25,4 +25,22 @@ describe('onchain parser', () => {
     assert.equal(parsed.flags.sort, 'pnl');
     assert.equal(parsed.flags.order, 'desc');
   });
+
+  it('parses liqmap timeline command', () => {
+    const parsed = parseInput('dpro-hl onchain liqmap-timeline BTC --from 2025-01-01T00:00:00Z --to 2025-01-07T00:00:00Z');
+    assert.equal(parsed.domain, 'onchain');
+    assert.equal(parsed.action, 'liqmap-timeline');
+    assert.equal(parsed.target, 'BTC');
+    assert.equal(parsed.flags.from, '2025-01-01T00:00:00Z');
+    assert.equal(parsed.flags.to, '2025-01-07T00:00:00Z');
+  });
+
+  it('parses orders book command', () => {
+    const parsed = parseInput('dpro-hl onchain orders-book BTC --page 1 --limit 20');
+    assert.equal(parsed.domain, 'onchain');
+    assert.equal(parsed.action, 'orders-book');
+    assert.equal(parsed.target, 'BTC');
+    assert.equal(parsed.flags.page, '1');
+    assert.equal(parsed.flags.limit, '20');
+  });
 });

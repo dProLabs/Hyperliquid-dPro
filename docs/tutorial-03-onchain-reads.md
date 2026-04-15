@@ -11,7 +11,11 @@ You can ask the agent to check:
 - Mids for the entire market
 - Holder distribution for a specific coin
 - Position distribution for a specific perpetual
+- Address tag metadata
+- Order distribution for a specific coin (book / untriggered / chart)
 - Liquidation heatmap
+- Liquidation timeline snapshots
+- Trending markets
 - Leaderboard
 
 ## How to Start
@@ -25,6 +29,9 @@ Then you can start looking at more specific data:
 > Check PURR top 5 holder addresses
 > Check xyz:NVDA perp holder addresses top 5, sorted by size descending
 > Check xyz:TSLA liquidation heatmap
+> Check BTC order book distribution top 20
+> Check BTC order chart using book source
+> Check 1h all-market trending
 > Check leaderboard top 10, sorted by daily PnL
 
 ## Recommended Usage Order
@@ -34,7 +41,10 @@ Then you can start looking at more specific data:
 3. Check spot holder count statistics
 4. Check xyz:NVDA perp holder addresses top 5, sorted by size descending
 5. Check xyz:TSLA liquidation heatmap
-6. Check leaderboard top 10, sorted by daily PnL
+6. Check BTC order book distribution top 20
+7. Check BTC order chart using book source
+8. Check 1h all-market trending
+9. Check leaderboard top 10, sorted by daily PnL
 
 ### Execution Log
 
@@ -106,7 +116,7 @@ Then you can start looking at more specific data:
 >
 > ```
 > Onchain liquidation map
-> Path: /api/v1/hl/perp/liquidation-map
+> Path: /api/v1/hl/liqmap
 > Coin: xyz:TSLA
 > Rows: 194
 >
@@ -152,6 +162,55 @@ Then you can start looking at more specific data:
 >   10  0x85530f0ff6496c72a619f37a60f3c1a59077737f     65267650.1327719986
 > ```
 
+---
+
+**Step 6: Check BTC Order Book Distribution Top 20**
+
+> **Execution Result**
+>
+> ```
+> Onchain orders (book)
+> Path: /api/v1/hl/orders/book
+> Coin: BTC
+>
+> OID           Side  Size      Price      Trigger
+> ─────────────────────────────────────────────────
+> 344801234001  buy   0.1200    104000.0   no
+> 344801234097  sell  0.0800    104050.0   no
+> ... (top 20 rows)
+> ```
+
+---
+
+**Step 7: Check BTC Order Chart Using Book Source**
+
+> **Execution Result**
+>
+> ```
+> Onchain orders chart
+> Path: /api/v1/hl/orders/chart
+> Coin: BTC
+> Type: book
+> Rows: 20
+> ```
+
+---
+
+**Step 8: Check 1h All-Market Trending**
+
+> **Execution Result**
+>
+> ```
+> Onchain trending (all)
+> Path: /api/v1/hl/trending
+> Period: 1h
+>
+> Market  Items  Pagination
+> ─────────────────────────────
+> spot      50   page=1, limit=50, total=300
+> perp      50   page=1, limit=50, total=220
+> ```
+
 ## What You'll Get
 
 After completing this tutorial, you should be able to start differentiating between several types of information:
@@ -164,6 +223,10 @@ This way when you're watching the market, your information will be more complete
 ## A Reminder When Using
 
 For assets with namespaces, just say them the way you naturally would, for example `xyz:NVDA` or `xyz:nvda`. Don't focus on format details; getting your question out is more important.
+
+Also note:
+- `spot meta` is deprecated and now returns a warning message.
+- For liquidation map, "liqmap" is the current command surface; saying "liquidation map" still works as a compatibility alias.
 
 ## What's Next
 
