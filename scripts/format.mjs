@@ -328,6 +328,38 @@ const formatters = {
     return renderTable(headers, rows, [2, 3, 4]);
   },
 
+  'twap-history': (d) => {
+    if (!d.items.length) return 'No TWAP history.';
+    const headers = ['Time', 'TWAP ID', 'Coin', 'Side', 'Size', 'Executed', 'Minutes', 'Status'];
+    const rows = d.items.map((item) => [
+      item.time ? new Date(Number(item.time)).toISOString().slice(0, 19).replace('T', ' ') : '—',
+      item.twapId ?? '—',
+      item.coin || '—',
+      item.side || '—',
+      fmtNum(item.sz, 4),
+      fmtNum(item.executedSz, 4),
+      item.minutes ?? '—',
+      item.error ? `${item.status}: ${item.error}` : (item.status || '—'),
+    ]);
+    return renderTable(headers, rows, [4, 5, 6]);
+  },
+
+  'twap-fill-history': (d) => {
+    if (!d.fills.length) return 'No TWAP fill history.';
+    const headers = ['Time', 'TWAP ID', 'Coin', 'Side', 'Size', 'Price', 'Fee', 'OID'];
+    const rows = d.fills.map((f) => [
+      f.time ? new Date(Number(f.time)).toISOString().slice(0, 19).replace('T', ' ') : '—',
+      f.twapId ?? '—',
+      f.coin || '—',
+      f.side || '—',
+      fmtNum(f.sz, 4),
+      fmtPx(f.px),
+      fmtUsd(f.fee),
+      f.oid ?? '—',
+    ]);
+    return renderTable(headers, rows, [4, 5, 6]);
+  },
+
   order_result: (d) => {
     if (d.status === 'filled') return `Order filled: ${d.coin} ${d.side} ${d.size} @ ${fmtPx(d.price)}`;
     if (d.status === 'resting') return `Order resting: ${d.coin} ${d.side} ${d.size} @ ${fmtPx(d.price)} (oid: ${d.oid})`;

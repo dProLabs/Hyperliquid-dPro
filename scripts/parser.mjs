@@ -83,7 +83,8 @@ const MARKET_ACTIONS = new Set(['quote', 'book', 'candles', 'movers', 'overview'
 const ACCOUNT_ACTIONS = new Set([
   'add-readonly', 'add-api', 'add-master', 'update-master', 'remove-master',
   'ls', 'remove', 'set-default', 'clear-password-cache',
-  'positions', 'balances', 'orders', 'fills', 'portfolio', 'order-history', 'funding-history',
+  'positions', 'balances', 'orders', 'fills', 'portfolio',
+  'order-history', 'funding-history', 'twap-history', 'twap-fill-history',
 ]);
 const TRADE_ACTIONS = new Set([
   'limit', 'market', 'cancel', 'cancel-all', 'cancel-by-cloid',
@@ -198,7 +199,7 @@ function parseStructured(tokens, flags, raw) {
   }
 
   // Account shortcuts: "positions", "balances", "orders", "fills", etc.
-  if (['positions', 'balances', 'orders', 'fills', 'portfolio', 'order-history', 'funding-history'].includes(first)) {
+  if (['positions', 'balances', 'orders', 'fills', 'portfolio', 'order-history', 'funding-history', 'twap-history', 'twap-fill-history'].includes(first)) {
     return {
       domain: 'account',
       action: first,
@@ -242,7 +243,7 @@ function parseStructured(tokens, flags, raw) {
     };
   }
 
-  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, transfer, onchain, account, spot order, perp order, hip3 order, approve-builder, builder-approval, positions, balances, orders, fills, order-history, funding-history`);
+  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, transfer, onchain, account, spot order, perp order, hip3 order, approve-builder, builder-approval, positions, balances, orders, fills, order-history, funding-history, twap-history, twap-fill-history`);
 }
 
 function parseTradeAction(marketType, tokens, flags, raw) {

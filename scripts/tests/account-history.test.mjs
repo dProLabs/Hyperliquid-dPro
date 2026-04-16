@@ -71,4 +71,70 @@ describe('account history commands', () => {
     assert.equal(out.data.items[0].coin, 'BTC');
     assert.deepEqual(captured, { startTime: 1, endTime: 2 });
   });
+
+  it('returns twap history rows', async () => {
+    __setAccountDepsForTest({
+      resolveQueryAddress: () => '0x1234567890abcdef1234567890abcdef12345678',
+      infoClient: {
+        getTwapHistory: async () => ([
+          {
+            time: 1710000000,
+            twapId: 42,
+            state: {
+              coin: '@265',
+              side: 'A',
+              sz: '1.2',
+              executedSz: '0.4',
+              executedNtl: '32',
+              minutes: 15,
+              randomize: true,
+              reduceOnly: false,
+            },
+            status: { status: 'activated' },
+          },
+        ]),
+      },
+      findMarket: async (coin) => (coin === '@265' ? { coin: 'TSLA' } : null),
+    });
+
+    const out = await account.twapHistory({ target: 'main', flags: { limit: '10' } }, { network: 'mainnet' });
+
+    assert.equal(out.ok, true);
+    assert.equal(out.type, 'twap-history');
+    assert.equal(out.data.items.length, 1);
+    assert.equal(out.data.items[0].coin, 'TSLA');
+    assert.equal(out.data.items[0].status, 'activated');
+    assert.equal(out.data.items[0].side, 'Sell');
+  });
+
+  it('returns twap fill history rows', async () => {
+    __setAccountDepsForTest({
+      resolveQueryAddress: () => '0x1234567890abcdef1234567890abcdef12345678',
+      infoClient: {
+        getUserTwapSliceFills: async () => ([
+          {
+            twapId: 42,
+            fill: {
+              time: 1710000000000,
+              coin: '@265',
+              side: 'B',
+              sz: '0.1',
+              px: '80',
+              fee: '-0.01',
+              oid: 999,
+            },
+          },
+        ]),
+      },
+      findMarket: async (coin) => (coin === '@265' ? { coin: 'TSLA' } : null),
+    });
+
+    const out = await account.twapFillHistory({ target: 'main', flags: { limit: '5' } }, { network: 'mainnet' });
+
+    assert.equal(out.ok, true);
+    assert.equal(out.type, 'twap-fill-history');
+    assert.equal(out.data.fills.length, 1);
+    assert.equal(out.data.fills[0].coin, 'TSLA');
+    assert.equal(out.data.fills[0].twapId, 42);
+  });
 });

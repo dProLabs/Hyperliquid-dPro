@@ -13,6 +13,8 @@ You can add a public address as a readonly account, then continue to ask:
 - What are the recent trades
 - What are the recent order-history updates
 - What are the recent funding-history updates
+- What are the recent TWAP lifecycle updates
+- What are the recent TWAP slice fills
 
 ## How to Start
 
@@ -28,6 +30,8 @@ After adding, you can continue to ask about this alias:
 > Check whale-1 recent 5 trades
 > Check whale-1 recent 20 order-history rows
 > Check whale-1 funding-history for the last 24 hours
+> Check whale-1 recent 20 TWAP history rows
+> Check whale-1 recent 20 TWAP fill rows
 
 If you'll be checking this account regularly, you can also say:
 
@@ -49,8 +53,10 @@ This way you can ask more simply later:
 6. Check whale-1 recent 5 trades
 7. Check whale-1 recent 20 order-history rows
 8. Check whale-1 funding-history for the last 24 hours
-9. Set whale-1 as default account
-10. Check positions
+9. Check whale-1 recent 20 TWAP history rows
+10. Check whale-1 recent 20 TWAP fill rows
+11. Set whale-1 as default account
+12. Check positions
 
 ### Execution Log
 
@@ -205,6 +211,42 @@ You can directly say:
 > ─────────────────────────────────────────────────────────────────────────
 > 2026-03-10 16:00:00  BTC   $-12.30   0.0100   0.000100      0xabc12345...
 > 2026-03-10 08:00:00  ETH   $8.14    -2.5000  -0.000080      0xdef98765...
+> ...
+> ```
+
+---
+
+**New: Check TWAP History (Natural Language)**
+
+You can directly say:
+
+> Help me check whale-1 recent 20 TWAP history rows.
+
+> **Execution Result (example)**
+>
+> ```
+> Time                 TWAP ID  Coin  Side  Size    Executed  Minutes  Status
+> ──────────────────────────────────────────────────────────────────────────────
+> 2026-03-10 17:45:21  42       BTC   Buy   1.0000  0.5000    15       activated
+> 2026-03-10 16:12:09  39       ETH   Sell  2.0000  2.0000    20       finished
+> ...
+> ```
+
+---
+
+**New: Check TWAP Fill History (Natural Language)**
+
+You can directly say:
+
+> Help me check whale-1 recent 20 TWAP fill rows.
+
+> **Execution Result (example)**
+>
+> ```
+> Time                 TWAP ID  Coin  Side  Size    Price      Fee     OID
+> ───────────────────────────────────────────────────────────────────────────
+> 2026-03-10 17:45:23  42       BTC   Buy   0.1000  70,912.00  $-0.01  344643500001
+> 2026-03-10 17:45:29  42       BTC   Buy   0.1000  70,915.00  $-0.01  344643500002
 > ...
 > ```
 

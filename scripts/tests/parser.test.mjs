@@ -156,6 +156,22 @@ describe('parser', () => {
       assert.equal(r.flags['end-time'], '2');
       assert.equal(r.flags.limit, '10');
     });
+
+    it('parses twap-history shortcut', () => {
+      const r = parseInput('dpro-hl twap-history main --limit 15');
+      assert.equal(r.domain, 'account');
+      assert.equal(r.action, 'twap-history');
+      assert.equal(r.target, 'main');
+      assert.equal(r.flags.limit, '15');
+    });
+
+    it('parses twap-fill-history shortcut', () => {
+      const r = parseInput('dpro-hl twap-fill-history main --limit 10');
+      assert.equal(r.domain, 'account');
+      assert.equal(r.action, 'twap-fill-history');
+      assert.equal(r.target, 'main');
+      assert.equal(r.flags.limit, '10');
+    });
   });
 
   describe('trade commands', () => {

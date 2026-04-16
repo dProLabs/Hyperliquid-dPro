@@ -144,6 +144,8 @@ Clear local password session cache file.
 ### `dpro-hl fills [alias|address] [--limit N]`
 ### `dpro-hl order-history [alias|address] [--limit N]`
 ### `dpro-hl funding-history [alias|address] [--start-time <ms>] [--end-time <ms>] [--limit N]`
+### `dpro-hl twap-history [alias|address] [--limit N]`
+### `dpro-hl twap-fill-history [alias|address] [--limit N]`
 ### `dpro-hl portfolio [alias|address]`
 
 **Example:**
