@@ -153,6 +153,33 @@ describe('onchain format', () => {
     assert.ok(output.includes('Rows: 1'));
   });
 
+  it('formats onchain hip3-fills table', () => {
+    const output = formatResult({
+      ok: true,
+      type: 'onchain-hip3-fills',
+      data: {
+        path: '/api/v1/hip3/fills',
+        query: { coin: 'xyz:TSLA' },
+        payload: {
+          items: [
+            {
+              blockTime: '2026-03-14T00:00:00.000Z',
+              coin: 'xyz:TSLA',
+              side: 'B',
+              sz: '1.5',
+              px: '100',
+              notionalUsd: '150',
+            },
+          ],
+          pagination: { page: 1, limit: 100, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    assert.ok(output.includes('Onchain HIP-3 fills'));
+    assert.ok(output.includes('xyz:TSLA'));
+    assert.ok(output.includes('Pagination'));
+  });
+
   it('formats onchain trending all-market summary', () => {
     const output = formatResult({
       ok: true,

@@ -281,6 +281,22 @@ async function leaderboard(parsed, ctx) {
   return wrap('onchain-leaderboard', payload, path, query);
 }
 
+async function hip3Fills(parsed, ctx) {
+  const coin = parseCoin(
+    parsed.target,
+    'Usage: dpro-hl onchain hip3-fills <coin> [--startTime <ISO|ms>] [--endTime <ISO|ms>] [--page N] [--limit N]',
+  );
+  const query = compact({
+    coin,
+    startTime: asOptionalString(parsed.flags?.startTime || parsed.flags?.['start-time']),
+    endTime: asOptionalString(parsed.flags?.endTime || parsed.flags?.['end-time']),
+    ...parsePageLimit(parsed.flags),
+  });
+  const path = '/api/v1/hip3/fills';
+  const payload = await getOnchain(path, query, ctx);
+  return wrap('onchain-hip3-fills', payload, path, query);
+}
+
 export default {
   ping,
   health,
@@ -299,4 +315,5 @@ export default {
   trending,
   liquidationMap,
   leaderboard,
+  hip3Fills,
 };

@@ -64,6 +64,7 @@ Do not prompt for account selection, password, or API-wallet setup for onchain c
 | `dpro-hl onchain liqmap-timeline <coin>` | GET | `/api/v1/hl/liqmap/timeline` | historical liquidation snapshots |
 | `dpro-hl onchain trending` | GET | `/api/v1/hl/trending` | spot/perp trending rows |
 | `dpro-hl onchain leaderboard` | GET | `/api/v1/leaderboard` | leaderboard rows |
+| `dpro-hl onchain hip3-fills <coin>` | GET | `/api/v1/hip3/fills` | HIP-3 fill rows |
 
 Only these commands are in scope for the onchain branch.
 
@@ -248,6 +249,15 @@ Expected behavior:
 - normalize a display-friendly row shape even if upstream fields differ
 - metric column should follow `--sort` when supplied
 - default metric follows implementation default when `--sort` is absent
+
+### `dpro-hl onchain hip3-fills <coin>`
+Use for HIP-3 fills by coin and optional time range.
+
+Expected behavior:
+- require exact coin
+- support optional `startTime` and `endTime` passthrough
+- support paging via `page` / `limit`
+- render fill rows with time, side, size, price, and notional
 
 ---
 

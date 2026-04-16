@@ -10,6 +10,7 @@ describe('onchain openapi filter', () => {
     assert.equal(allowlist.has('/api/v1/hl/orders/book'), true);
     assert.equal(allowlist.has('/api/v1/hl/trending'), true);
     assert.equal(allowlist.has('/api/v1/leaderboard'), true);
+    assert.equal(allowlist.has('/api/v1/hip3/fills'), true);
   });
 
   it('excludes blocked endpoints', async () => {

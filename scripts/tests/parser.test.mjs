@@ -138,6 +138,40 @@ describe('parser', () => {
       assert.equal(r.action, 'fills');
       assert.equal(r.flags.limit, '50');
     });
+
+    it('parses order-history shortcut', () => {
+      const r = parseInput('dpro-hl order-history main --limit 20');
+      assert.equal(r.domain, 'account');
+      assert.equal(r.action, 'order-history');
+      assert.equal(r.target, 'main');
+      assert.equal(r.flags.limit, '20');
+    });
+
+    it('parses funding-history shortcut', () => {
+      const r = parseInput('dpro-hl funding-history main --start-time 1 --end-time 2 --limit 10');
+      assert.equal(r.domain, 'account');
+      assert.equal(r.action, 'funding-history');
+      assert.equal(r.target, 'main');
+      assert.equal(r.flags['start-time'], '1');
+      assert.equal(r.flags['end-time'], '2');
+      assert.equal(r.flags.limit, '10');
+    });
+
+    it('parses twap-history shortcut', () => {
+      const r = parseInput('dpro-hl twap-history main --limit 15');
+      assert.equal(r.domain, 'account');
+      assert.equal(r.action, 'twap-history');
+      assert.equal(r.target, 'main');
+      assert.equal(r.flags.limit, '15');
+    });
+
+    it('parses twap-fill-history shortcut', () => {
+      const r = parseInput('dpro-hl twap-fill-history main --limit 10');
+      assert.equal(r.domain, 'account');
+      assert.equal(r.action, 'twap-fill-history');
+      assert.equal(r.target, 'main');
+      assert.equal(r.flags.limit, '10');
+    });
   });
 
   describe('trade commands', () => {
@@ -202,6 +236,102 @@ describe('parser', () => {
       const r = parseInput('dpro-hl approve-builder');
       assert.equal(r.domain, 'trade');
       assert.equal(r.action, 'approve-builder');
+    });
+
+    it('parses modify order command', () => {
+      const r = parseInput('dpro-hl perp order modify 123 buy 0.01 BTC 50000 --tif Gtc');
+      assert.equal(r.action, 'modify');
+      assert.equal(r.marketType, 'perp');
+      assert.equal(r.target, '123');
+      assert.equal(r.args.coin, 'BTC');
+      assert.equal(r.args.side, 'buy');
+      assert.equal(r.args.size, '0.01');
+      assert.equal(r.args.price, '50000');
+      assert.equal(r.flags.tif, 'Gtc');
+    });
+
+    it('parses twap-create command', () => {
+      const r = parseInput('dpro-hl hip3 order twap-create buy 1 xyz:NVDA --minutes 10 --randomize');
+      assert.equal(r.action, 'twap-create');
+      assert.equal(r.marketType, 'hip3');
+      assert.equal(r.target, 'XYZ:NVDA');
+      assert.equal(r.args.side, 'buy');
+      assert.equal(r.args.size, '1');
+      assert.equal(r.flags.minutes, '10');
+      assert.equal(r.flags.randomize, true);
+    });
+
+    it('parses twap-cancel command', () => {
+      const r = parseInput('dpro-hl perp order twap-cancel BTC 12');
+      assert.equal(r.action, 'twap-cancel');
+      assert.equal(r.marketType, 'perp');
+      assert.equal(r.target, 'BTC');
+      assert.equal(r.args.twapId, '12');
+    });
+
+    it('parses batch-limit command', () => {
+      const r = parseInput('dpro-hl spot order batch-limit buy PURR 10@0.08,20@0.07 --tif Alo');
+      assert.equal(r.action, 'batch-limit');
+      assert.equal(r.marketType, 'spot');
+      assert.equal(r.target, 'PURR');
+      assert.equal(r.args.side, 'buy');
+      assert.equal(r.args.entries, '10@0.08,20@0.07');
+      assert.equal(r.flags.tif, 'Alo');
+    });
+
+    it('parses cancel-multiple command', () => {
+      const r = parseInput('dpro-hl perp order cancel-multiple 1,2,3');
+      assert.equal(r.action, 'cancel-multiple');
+      assert.equal(r.marketType, 'perp');
+      assert.equal(r.args.oids, '1,2,3');
+    });
+
+    it('parses close-position command', () => {
+      const r = parseInput('dpro-hl perp order close-position BTC --size 0.1 --slippage 0.5');
+      assert.equal(r.action, 'close-position');
+      assert.equal(r.marketType, 'perp');
+      assert.equal(r.target, 'BTC');
+      assert.equal(r.flags.size, '0.1');
+      assert.equal(r.flags.slippage, '0.5');
+    });
+
+    it('parses reverse-position command', () => {
+      const r = parseInput('dpro-hl hip3 order reverse-position xyz:NVDA --size 1');
+      assert.equal(r.action, 'reverse-position');
+      assert.equal(r.marketType, 'hip3');
+      assert.equal(r.target, 'XYZ:NVDA');
+      assert.equal(r.flags.size, '1');
+    });
+
+    it('parses scale-order command', () => {
+      const r = parseInput('dpro-hl perp order scale-order buy BTC --from 100 --to 110 --count 5 --total-size 1');
+      assert.equal(r.action, 'scale-order');
+      assert.equal(r.args.side, 'buy');
+      assert.equal(r.target, 'BTC');
+      assert.equal(r.flags.from, '100');
+      assert.equal(r.flags.to, '110');
+      assert.equal(r.flags.count, '5');
+      assert.equal(r.flags['total-size'], '1');
+    });
+
+    it('parses tpsl command', () => {
+      const r = parseInput('dpro-hl perp order tpsl BTC --tp 120 --sl 90 --size 0.2');
+      assert.equal(r.action, 'tpsl');
+      assert.equal(r.target, 'BTC');
+      assert.equal(r.flags.tp, '120');
+      assert.equal(r.flags.sl, '90');
+      assert.equal(r.flags.size, '0.2');
+    });
+
+    it('parses oto command', () => {
+      const r = parseInput('dpro-hl perp order oto buy 0.2 BTC 100 --tp 110 --sl 95');
+      assert.equal(r.action, 'oto');
+      assert.equal(r.target, 'BTC');
+      assert.equal(r.args.side, 'buy');
+      assert.equal(r.args.size, '0.2');
+      assert.equal(r.args.entryPrice, '100');
+      assert.equal(r.flags.tp, '110');
+      assert.equal(r.flags.sl, '95');
     });
 
     it('parses builder-approval with explicit target', () => {
@@ -282,6 +412,16 @@ describe('parser', () => {
       assert.equal(r.target, 'BTC');
       assert.equal(r.flags.from, '2025-01-01');
       assert.equal(r.flags.to, '2025-01-07');
+    });
+
+    it('parses onchain hip3-fills command', () => {
+      const r = parseInput('dpro-hl onchain hip3-fills xyz:TSLA --startTime 1 --endTime 2 --limit 5');
+      assert.equal(r.domain, 'onchain');
+      assert.equal(r.action, 'hip3-fills');
+      assert.equal(r.target, 'XYZ:TSLA');
+      assert.equal(r.flags.startTime, '1');
+      assert.equal(r.flags.endTime, '2');
+      assert.equal(r.flags.limit, '5');
     });
   });
 

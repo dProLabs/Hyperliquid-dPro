@@ -36,6 +36,7 @@ const FALLBACK_ALLOWLIST = new Set([
   '/api/v1/hl/liqmap/timeline',
   '/api/v1/hl/perp/liquidation-map',
   '/api/v1/leaderboard',
+  '/api/v1/hip3/fills',
 ]);
 
 let openapiCache = null;

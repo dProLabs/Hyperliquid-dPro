@@ -166,6 +166,26 @@ describe('onchain commands', () => {
     assert.ok(capturedUrl.includes('limit=5'));
   });
 
+  it('builds hip3-fills query correctly', async () => {
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return jsonResponse({ items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 0 } });
+    };
+
+    await onchain.hip3Fills({
+      target: 'xyz:tsla',
+      flags: { startTime: '1', endTime: '2', page: '1', limit: '5' },
+    }, {});
+
+    assert.match(capturedUrl, /^https:\/\/api\.d\.pro\/api\/v1\/hip3\/fills\?/);
+    assert.ok(capturedUrl.includes('coin=xyz%3ATSLA'));
+    assert.ok(capturedUrl.includes('startTime=1'));
+    assert.ok(capturedUrl.includes('endTime=2'));
+    assert.ok(capturedUrl.includes('page=1'));
+    assert.ok(capturedUrl.includes('limit=5'));
+  });
+
   it('returns local deprecation notice for spot-meta', async () => {
     let called = false;
     globalThis.fetch = async () => {

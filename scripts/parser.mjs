@@ -82,9 +82,16 @@ function extractFlags(tokens) {
 const MARKET_ACTIONS = new Set(['quote', 'book', 'candles', 'movers', 'overview']);
 const ACCOUNT_ACTIONS = new Set([
   'add-readonly', 'add-api', 'add-master', 'update-master', 'remove-master',
-  'ls', 'remove', 'set-default', 'clear-password-cache', 'positions', 'balances', 'orders', 'fills', 'portfolio',
+  'ls', 'remove', 'set-default', 'clear-password-cache',
+  'positions', 'balances', 'orders', 'fills', 'portfolio',
+  'order-history', 'funding-history', 'twap-history', 'twap-fill-history',
 ]);
-const TRADE_ACTIONS = new Set(['limit', 'market', 'cancel', 'cancel-all', 'cancel-by-cloid', 'set-leverage', 'topup-isolated', 'modify']);
+const TRADE_ACTIONS = new Set([
+  'limit', 'market', 'cancel', 'cancel-all', 'cancel-by-cloid',
+  'set-leverage', 'topup-isolated', 'modify',
+  'twap-create', 'twap-cancel', 'batch-limit', 'cancel-multiple',
+  'close-position', 'reverse-position', 'scale-order', 'tpsl', 'oto',
+]);
 const TRADE_NAMESPACES = new Set(['spot', 'perp', 'hip3']);
 const ONCHAIN_ACTIONS = new Set([
   'ping',
@@ -104,6 +111,7 @@ const ONCHAIN_ACTIONS = new Set([
   'orders-chart',
   'trending',
   'leaderboard',
+  'hip3-fills',
 ]);
 const ONCHAIN_COIN_ACTIONS = new Set([
   'spot-holders',
@@ -114,6 +122,7 @@ const ONCHAIN_COIN_ACTIONS = new Set([
   'orders-book',
   'orders-untriggered',
   'orders-chart',
+  'hip3-fills',
 ]);
 const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
@@ -189,8 +198,8 @@ function parseStructured(tokens, flags, raw) {
     };
   }
 
-  // Account shortcuts: "positions", "balances", "orders", "fills"
-  if (['positions', 'balances', 'orders', 'fills', 'portfolio'].includes(first)) {
+  // Account shortcuts: "positions", "balances", "orders", "fills", etc.
+  if (['positions', 'balances', 'orders', 'fills', 'portfolio', 'order-history', 'funding-history', 'twap-history', 'twap-fill-history'].includes(first)) {
     return {
       domain: 'account',
       action: first,
@@ -234,7 +243,7 @@ function parseStructured(tokens, flags, raw) {
     };
   }
 
-  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, transfer, onchain, account, spot order, perp order, hip3 order, approve-builder, builder-approval, positions, balances, orders, fills`);
+  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, transfer, onchain, account, spot order, perp order, hip3 order, approve-builder, builder-approval, positions, balances, orders, fills, order-history, funding-history, twap-history, twap-fill-history`);
 }
 
 function parseTradeAction(marketType, tokens, flags, raw) {
@@ -277,8 +286,225 @@ function parseTradeAction(marketType, tokens, flags, raw) {
       raw,
     };
   }
+  if (action === 'modify') {
+    return parseModifyCommand(marketType, tokens.slice(1), flags, raw);
+  }
+  if (action === 'twap-create') {
+    return parseTwapCreateCommand(marketType, tokens.slice(1), flags, raw);
+  }
+  if (action === 'twap-cancel') {
+    return parseTwapCancelCommand(marketType, tokens.slice(1), flags, raw);
+  }
+  if (action === 'batch-limit') {
+    return parseBatchLimitCommand(marketType, tokens.slice(1), flags, raw);
+  }
+  if (action === 'cancel-multiple') {
+    return parseCancelMultipleCommand(marketType, tokens.slice(1), flags, raw);
+  }
+  if (action === 'close-position') {
+    return parseClosePositionCommand(marketType, tokens.slice(1), flags, raw);
+  }
+  if (action === 'reverse-position') {
+    return parseReversePositionCommand(marketType, tokens.slice(1), flags, raw);
+  }
+  if (action === 'scale-order') {
+    return parseScaleOrderCommand(marketType, tokens.slice(1), flags, raw);
+  }
+  if (action === 'tpsl') {
+    return parseTpslCommand(marketType, tokens.slice(1), flags, raw);
+  }
+  if (action === 'oto') {
+    return parseOtoCommand(marketType, tokens.slice(1), flags, raw);
+  }
 
   return { domain: 'trade', marketType, action, target: tokens[1] || null, args: { rest: tokens.slice(2) }, flags, raw };
+}
+
+function parseModifyCommand(marketType, tokens, flags, raw) {
+  // modify: <oid|cloid> buy|sell <size> <coin> <price>
+  const oid = tokens[0];
+  const side = tokens[1]?.toLowerCase();
+  const size = tokens[2];
+  const coin = tokens[3]?.toUpperCase();
+  const price = tokens[4];
+
+  if (!oid || !side || !size || !coin || !price) {
+    throw inputError(`Usage: dpro-hl ${marketType} order modify <oid|cloid> buy|sell <size> <coin> <price>`);
+  }
+  if (!['buy', 'sell'].includes(side)) {
+    throw inputError(`Order side must be "buy" or "sell", got: ${side}`);
+  }
+
+  return {
+    domain: 'trade',
+    marketType,
+    action: 'modify',
+    target: oid,
+    args: { side, size, coin, price },
+    flags,
+    raw,
+  };
+}
+
+function parseTwapCreateCommand(marketType, tokens, flags, raw) {
+  // twap-create: buy|sell <size> <coin> --minutes <N>
+  const side = tokens[0]?.toLowerCase();
+  const size = tokens[1];
+  const coin = tokens[2]?.toUpperCase();
+  if (!side || !['buy', 'sell'].includes(side) || !size || !coin) {
+    throw inputError(`Usage: dpro-hl ${marketType} order twap-create buy|sell <size> <coin> --minutes <N>`);
+  }
+
+  return {
+    domain: 'trade',
+    marketType,
+    action: 'twap-create',
+    target: coin,
+    args: { side, size },
+    flags,
+    raw,
+  };
+}
+
+function parseTwapCancelCommand(marketType, tokens, flags, raw) {
+  // twap-cancel: <coin> <twapId>
+  const coin = tokens[0]?.toUpperCase();
+  const twapId = tokens[1];
+  if (!coin || !twapId) {
+    throw inputError(`Usage: dpro-hl ${marketType} order twap-cancel <coin> <twapId>`);
+  }
+
+  return {
+    domain: 'trade',
+    marketType,
+    action: 'twap-cancel',
+    target: coin,
+    args: { twapId },
+    flags,
+    raw,
+  };
+}
+
+function parseBatchLimitCommand(marketType, tokens, flags, raw) {
+  // batch-limit: buy|sell <coin> <size@price,size@price,...>
+  const side = tokens[0]?.toLowerCase();
+  const coin = tokens[1]?.toUpperCase();
+  const entries = tokens[2];
+  if (!side || !['buy', 'sell'].includes(side) || !coin || !entries) {
+    throw inputError(`Usage: dpro-hl ${marketType} order batch-limit buy|sell <coin> <size@price,size@price,...>`);
+  }
+
+  return {
+    domain: 'trade',
+    marketType,
+    action: 'batch-limit',
+    target: coin,
+    args: { side, entries },
+    flags,
+    raw,
+  };
+}
+
+function parseCancelMultipleCommand(marketType, tokens, flags, raw) {
+  // cancel-multiple: <oid1,oid2,...>
+  const oids = tokens[0];
+  if (!oids) {
+    throw inputError(`Usage: dpro-hl ${marketType} order cancel-multiple <oid1,oid2,...>`);
+  }
+
+  return {
+    domain: 'trade',
+    marketType,
+    action: 'cancel-multiple',
+    target: null,
+    args: { oids },
+    flags,
+    raw,
+  };
+}
+
+function parseClosePositionCommand(marketType, tokens, flags, raw) {
+  const coin = tokens[0]?.toUpperCase();
+  if (!coin) {
+    throw inputError(`Usage: dpro-hl ${marketType} order close-position <coin> [--size <N>] [--limit-price <P>|--slippage <N>]`);
+  }
+  return {
+    domain: 'trade',
+    marketType,
+    action: 'close-position',
+    target: coin,
+    args: {},
+    flags,
+    raw,
+  };
+}
+
+function parseReversePositionCommand(marketType, tokens, flags, raw) {
+  const coin = tokens[0]?.toUpperCase();
+  if (!coin) {
+    throw inputError(`Usage: dpro-hl ${marketType} order reverse-position <coin> [--size <N>] [--slippage <N>]`);
+  }
+  return {
+    domain: 'trade',
+    marketType,
+    action: 'reverse-position',
+    target: coin,
+    args: {},
+    flags,
+    raw,
+  };
+}
+
+function parseScaleOrderCommand(marketType, tokens, flags, raw) {
+  const side = tokens[0]?.toLowerCase();
+  const coin = tokens[1]?.toUpperCase();
+  if (!side || !['buy', 'sell'].includes(side) || !coin) {
+    throw inputError(`Usage: dpro-hl ${marketType} order scale-order buy|sell <coin> --from <P> --to <P> --count <N> --total-size <N>`);
+  }
+  return {
+    domain: 'trade',
+    marketType,
+    action: 'scale-order',
+    target: coin,
+    args: { side },
+    flags,
+    raw,
+  };
+}
+
+function parseTpslCommand(marketType, tokens, flags, raw) {
+  const coin = tokens[0]?.toUpperCase();
+  if (!coin) {
+    throw inputError(`Usage: dpro-hl ${marketType} order tpsl <coin> --tp <price> --sl <price> [--size <N>]`);
+  }
+  return {
+    domain: 'trade',
+    marketType,
+    action: 'tpsl',
+    target: coin,
+    args: {},
+    flags,
+    raw,
+  };
+}
+
+function parseOtoCommand(marketType, tokens, flags, raw) {
+  const side = tokens[0]?.toLowerCase();
+  const size = tokens[1];
+  const coin = tokens[2]?.toUpperCase();
+  const entryPrice = tokens[3];
+  if (!side || !['buy', 'sell'].includes(side) || !size || !coin || !entryPrice) {
+    throw inputError(`Usage: dpro-hl ${marketType} order oto buy|sell <size> <coin> <entryPrice> --tp <price> --sl <price>`);
+  }
+  return {
+    domain: 'trade',
+    marketType,
+    action: 'oto',
+    target: coin,
+    args: { side, size, entryPrice },
+    flags,
+    raw,
+  };
 }
 
 function parseOrderCommand(marketType, action, tokens, flags, raw) {

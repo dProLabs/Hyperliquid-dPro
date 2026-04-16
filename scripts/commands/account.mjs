@@ -288,6 +288,109 @@ async function fills(parsed, ctx) {
   return { ok: true, type: 'fills', data: { fills: fillList } };
 }
 
+function parseOptionalMsTimestamp(value, label) {
+  if (value == null) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) {
+    throw deps.inputError(`${label} must be a Unix ms timestamp, got: "${value}".`);
+  }
+  return Math.floor(n);
+}
+
+function normalizeEpochMs(value) {
+  if (value == null) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  // Some APIs return seconds; normalize to milliseconds for display consistency.
+  return n < 1e12 ? Math.floor(n * 1000) : Math.floor(n);
+}
+
+async function orderHistory(parsed, ctx) {
+  const address = deps.resolveQueryAddress(parsed.target);
+  const limit = Number(parsed.flags?.limit) || DEFAULT_FILL_LIMIT;
+  const isTestnet = ctx?.network === 'testnet';
+
+  const result = await deps.infoClient.getHistoricalOrders(address, { isTestnet });
+  const toDisplayCoin = makeCoinDisplayResolver(isTestnet);
+  const rows = await Promise.all((result || []).slice(0, limit).map(async (row) => ({
+    time: row.statusTimestamp || row.order?.timestamp || null,
+    coin: await toDisplayCoin(row.order?.coin || ''),
+    side: row.order?.side === 'B' ? 'Buy' : 'Sell',
+    sz: row.order?.sz || row.order?.origSz || null,
+    px: row.order?.limitPx || row.order?.px || null,
+    status: row.status || 'unknown',
+    oid: row.order?.oid || null,
+  })));
+
+  return { ok: true, type: 'order-history', data: { orders: rows } };
+}
+
+async function fundingHistory(parsed, ctx) {
+  const address = deps.resolveQueryAddress(parsed.target);
+  const limit = Number(parsed.flags?.limit) || DEFAULT_FILL_LIMIT;
+  const isTestnet = ctx?.network === 'testnet';
+  const startTime = parseOptionalMsTimestamp(parsed.flags?.['start-time'], 'start-time');
+  const endTime = parseOptionalMsTimestamp(parsed.flags?.['end-time'], 'end-time');
+
+  const result = await deps.infoClient.getUserFunding(address, startTime, endTime, { isTestnet });
+  const rows = (result || []).slice(0, limit).map((row) => ({
+    time: row.time,
+    hash: row.hash,
+    coin: row.delta?.coin || '—',
+    usdc: row.delta?.usdc || '0',
+    szi: row.delta?.szi || '0',
+    fundingRate: row.delta?.fundingRate || '0',
+  }));
+
+  return { ok: true, type: 'funding-history', data: { items: rows } };
+}
+
+async function twapHistory(parsed, ctx) {
+  const address = deps.resolveQueryAddress(parsed.target);
+  const limit = Number(parsed.flags?.limit) || DEFAULT_FILL_LIMIT;
+  const isTestnet = ctx?.network === 'testnet';
+
+  const result = await deps.infoClient.getTwapHistory(address, { isTestnet });
+  const toDisplayCoin = makeCoinDisplayResolver(isTestnet);
+  const rows = await Promise.all((result || []).slice(0, limit).map(async (row) => ({
+    time: normalizeEpochMs(row.time || row.state?.timestamp),
+    twapId: row.twapId ?? null,
+    coin: await toDisplayCoin(row.state?.coin || ''),
+    side: row.state?.side === 'B' ? 'Buy' : (row.state?.side === 'A' ? 'Sell' : '—'),
+    sz: row.state?.sz || null,
+    executedSz: row.state?.executedSz || null,
+    executedNtl: row.state?.executedNtl || null,
+    minutes: row.state?.minutes || null,
+    randomize: !!row.state?.randomize,
+    reduceOnly: !!row.state?.reduceOnly,
+    status: row.status?.status || 'unknown',
+    error: row.status?.status === 'error' ? row.status?.description || null : null,
+  })));
+
+  return { ok: true, type: 'twap-history', data: { items: rows } };
+}
+
+async function twapFillHistory(parsed, ctx) {
+  const address = deps.resolveQueryAddress(parsed.target);
+  const limit = Number(parsed.flags?.limit) || DEFAULT_FILL_LIMIT;
+  const isTestnet = ctx?.network === 'testnet';
+
+  const result = await deps.infoClient.getUserTwapSliceFills(address, { isTestnet });
+  const toDisplayCoin = makeCoinDisplayResolver(isTestnet);
+  const rows = await Promise.all((result || []).slice(0, limit).map(async (row) => ({
+    time: normalizeEpochMs(row.fill?.time),
+    twapId: row.twapId,
+    coin: await toDisplayCoin(row.fill?.coin || ''),
+    side: row.fill?.side === 'B' ? 'Buy' : (row.fill?.side === 'A' ? 'Sell' : '—'),
+    sz: row.fill?.sz || null,
+    px: row.fill?.px || null,
+    fee: row.fill?.fee || null,
+    oid: row.fill?.oid || null,
+  })));
+
+  return { ok: true, type: 'twap-fill-history', data: { fills: rows } };
+}
+
 async function portfolio(parsed, ctx) {
   const [posResult, balResult, ordResult] = await Promise.all([
     positions(parsed, ctx),
@@ -318,5 +421,7 @@ export default {
   addReadonly, addApi, addMaster, updateMaster, removeMaster,
   ls, remove, setDefault,
   clearPasswordCache,
-  positions, balances, orders, fills, portfolio,
+  positions, balances, orders, fills,
+  orderHistory, fundingHistory, twapHistory, twapFillHistory,
+  portfolio,
 };

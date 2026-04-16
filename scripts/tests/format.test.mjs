@@ -186,4 +186,63 @@ describe('formatResult', () => {
     assert.ok(out.includes('Master key added'));
     assert.ok(out.includes('0x1234567890abcdef1234567890abcdef12345678'));
   });
+
+  it('formats tpsl result', () => {
+    const result = {
+      ok: true,
+      type: 'tpsl_result',
+      data: { coin: 'BTC', side: 'long', size: '1', tp: '120000', sl: '100000' },
+    };
+    const out = formatResult(result);
+    assert.ok(out.includes('TP/SL attached'));
+    assert.ok(out.includes('BTC'));
+  });
+
+  it('formats twap history table', () => {
+    const result = {
+      ok: true,
+      type: 'twap-history',
+      data: {
+        items: [
+          {
+            time: 1710000000000,
+            twapId: 42,
+            coin: 'BTC',
+            side: 'Buy',
+            sz: '1',
+            executedSz: '0.5',
+            minutes: 15,
+            status: 'activated',
+          },
+        ],
+      },
+    };
+    const out = formatResult(result);
+    assert.ok(out.includes('TWAP ID'));
+    assert.ok(out.includes('activated'));
+  });
+
+  it('formats twap fill history table', () => {
+    const result = {
+      ok: true,
+      type: 'twap-fill-history',
+      data: {
+        fills: [
+          {
+            time: 1710000000000,
+            twapId: 42,
+            coin: 'BTC',
+            side: 'Sell',
+            sz: '0.1',
+            px: '80000',
+            fee: '-0.1',
+            oid: 999,
+          },
+        ],
+      },
+    };
+    const out = formatResult(result);
+    assert.ok(out.includes('TWAP ID'));
+    assert.ok(out.includes('999'));
+  });
 });
