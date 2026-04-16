@@ -186,4 +186,15 @@ describe('formatResult', () => {
     assert.ok(out.includes('Master key added'));
     assert.ok(out.includes('0x1234567890abcdef1234567890abcdef12345678'));
   });
+
+  it('formats tpsl result', () => {
+    const result = {
+      ok: true,
+      type: 'tpsl_result',
+      data: { coin: 'BTC', side: 'long', size: '1', tp: '120000', sl: '100000' },
+    };
+    const out = formatResult(result);
+    assert.ok(out.includes('TP/SL attached'));
+    assert.ok(out.includes('BTC'));
+  });
 });

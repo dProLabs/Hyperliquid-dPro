@@ -142,6 +142,8 @@ Clear local password session cache file.
 ### `dpro-hl balances [alias|address]`
 ### `dpro-hl orders [alias|address]`
 ### `dpro-hl fills [alias|address] [--limit N]`
+### `dpro-hl order-history [alias|address] [--limit N]`
+### `dpro-hl funding-history [alias|address] [--start-time <ms>] [--end-time <ms>] [--limit N]`
 ### `dpro-hl portfolio [alias|address]`
 
 **Example:**
@@ -228,6 +230,11 @@ dpro-hl spot order market sell 1 HYPE --slippage 0.3
 ### `dpro-hl spot order cancel <oid>`
 ### `dpro-hl spot order cancel-all`
 ### `dpro-hl spot order cancel-by-cloid <coin> <cloid>`
+### `dpro-hl spot order cancel-multiple <oid1,oid2,...>`
+### `dpro-hl spot order modify <oid|cloid> buy|sell <size> <coin> <price> [--tif Gtc|Ioc|Alo]`
+### `dpro-hl spot order batch-limit buy|sell <coin> <size@price,size@price,...> [--tif Gtc|Ioc|Alo]`
+### `dpro-hl spot order twap-create buy|sell <size> <coin> --minutes <N> [--randomize]`
+### `dpro-hl spot order twap-cancel <coin> <twapId>`
 
 **Rules:**
 - Spot does not support leverage-management commands.
@@ -273,6 +280,16 @@ dpro-hl perp order market sell 1 ETH --slippage 0.3 --reduce-only
 ### `dpro-hl perp order cancel <oid>`
 ### `dpro-hl perp order cancel-all`
 ### `dpro-hl perp order cancel-by-cloid <coin> <cloid>`
+### `dpro-hl perp order cancel-multiple <oid1,oid2,...>`
+### `dpro-hl perp order modify <oid|cloid> buy|sell <size> <coin> <price> [--tif Gtc|Ioc|Alo] [--reduce-only]`
+### `dpro-hl perp order batch-limit buy|sell <coin> <size@price,size@price,...> [--tif Gtc|Ioc|Alo] [--reduce-only]`
+### `dpro-hl perp order twap-create buy|sell <size> <coin> --minutes <N> [--reduce-only] [--randomize]`
+### `dpro-hl perp order twap-cancel <coin> <twapId>`
+### `dpro-hl perp order close-position <coin> [--size <N>] [--limit-price <P>|--slippage <N>]`
+### `dpro-hl perp order reverse-position <coin> [--size <N>] [--slippage <N>]`
+### `dpro-hl perp order scale-order buy|sell <coin> --from <P> --to <P> --count <N> --total-size <N> [--tif Gtc|Ioc|Alo] [--reduce-only]`
+### `dpro-hl perp order tpsl <coin> --tp <price> --sl <price> [--size <N>]`
+### `dpro-hl perp order oto buy|sell <size> <coin> <entryPrice> --tp <price> --sl <price>`
 
 ### `dpro-hl perp order set-leverage <coin> <leverage> [--cross|--isolated]`
 ### `dpro-hl perp order topup-isolated <coin> <usd>`
@@ -326,6 +343,16 @@ dpro-hl hip3 order market sell 1 xyz:TSLA --slippage 0.5 --reduce-only
 ### `dpro-hl hip3 order cancel <oid>`
 ### `dpro-hl hip3 order cancel-all`
 ### `dpro-hl hip3 order cancel-by-cloid <coin> <cloid>`
+### `dpro-hl hip3 order cancel-multiple <oid1,oid2,...>`
+### `dpro-hl hip3 order modify <oid|cloid> buy|sell <size> <coin> <price> [--tif Gtc|Ioc|Alo] [--reduce-only]`
+### `dpro-hl hip3 order batch-limit buy|sell <coin> <size@price,size@price,...> [--tif Gtc|Ioc|Alo] [--reduce-only]`
+### `dpro-hl hip3 order twap-create buy|sell <size> <coin> --minutes <N> [--reduce-only] [--randomize]`
+### `dpro-hl hip3 order twap-cancel <coin> <twapId>`
+### `dpro-hl hip3 order close-position <coin> [--size <N>] [--limit-price <P>|--slippage <N>]`
+### `dpro-hl hip3 order reverse-position <coin> [--size <N>] [--slippage <N>]`
+### `dpro-hl hip3 order scale-order buy|sell <coin> --from <P> --to <P> --count <N> --total-size <N> [--tif Gtc|Ioc|Alo] [--reduce-only]`
+### `dpro-hl hip3 order tpsl <coin> --tp <price> --sl <price> [--size <N>]`
+### `dpro-hl hip3 order oto buy|sell <size> <coin> <entryPrice> --tp <price> --sl <price>`
 
 ### `dpro-hl hip3 order set-leverage <coin> <leverage> [--cross|--isolated]`
 ### `dpro-hl hip3 order topup-isolated <coin> <usd>`
@@ -383,5 +410,6 @@ Check whether the selected user has already authorized the builder.
 ### `dpro-hl onchain liqmap-timeline <coin> --from <ISO> --to <ISO>`
 ### `dpro-hl onchain trending [--period 15m|1h|4h|24h] [--market all|spot|perp] [--page N] [--limit N]`
 ### `dpro-hl onchain leaderboard [--page N] [--limit N] [--sort field] [--order asc|desc]`
+### `dpro-hl onchain hip3-fills <coin> [--startTime <ISO|ms>] [--endTime <ISO|ms>] [--page N] [--limit N]`
 
 For endpoint mapping and response-shape details, see [`onchain.md`](onchain.md).

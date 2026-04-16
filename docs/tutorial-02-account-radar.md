@@ -11,6 +11,8 @@ You can add a public address as a readonly account, then continue to ask:
 - What is the account balance
 - Are there any open orders
 - What are the recent trades
+- What are the recent order-history updates
+- What are the recent funding-history updates
 
 ## How to Start
 
@@ -24,6 +26,8 @@ After adding, you can continue to ask about this alias:
 > Check whale-1 balances
 > Check whale-1 orders
 > Check whale-1 recent 5 trades
+> Check whale-1 recent 20 order-history rows
+> Check whale-1 funding-history for the last 24 hours
 
 If you'll be checking this account regularly, you can also say:
 
@@ -43,8 +47,10 @@ This way you can ask more simply later:
 4. Check whale-1 balances
 5. Check whale-1 orders
 6. Check whale-1 recent 5 trades
-7. Set whale-1 as default account
-8. Check positions
+7. Check whale-1 recent 20 order-history rows
+8. Check whale-1 funding-history for the last 24 hours
+9. Set whale-1 as default account
+10. Check positions
 
 ### Execution Log
 
@@ -164,6 +170,42 @@ This way you can ask more simply later:
 > 2026-03-10 17:37:16  TIA          Sell  62.6000     0.3346  $-0.00
 > 2026-03-10 17:37:16  cash:USA500  Buy    0.0070   6,821.20  $-0.00
 > 2026-03-10 17:37:16  cash:USA500  Buy    0.0070   6,821.20  $-0.00
+> ```
+
+---
+
+**New: Check Order History (Natural Language)**
+
+You can directly say:
+
+> Help me check whale-1 recent 20 order-history rows, newest first.
+
+> **Execution Result (example)**
+>
+> ```
+> Time                 OID           Coin   Side  Size     Price      Status
+> ─────────────────────────────────────────────────────────────────────────────
+> 2026-03-10 17:39:02  344643450001  BTC    Buy   0.0200   70,900.00  filled
+> 2026-03-10 17:38:41  344643449998  ETH    Sell  1.2500    2,060.50  canceled
+> ...
+> ```
+
+---
+
+**New: Check Funding History (Natural Language)**
+
+You can directly say:
+
+> Help me check whale-1 funding-history for the last 24 hours, top 20 rows.
+
+> **Execution Result (example)**
+>
+> ```
+> Time                 Coin  USDC      SZI      Funding Rate  Hash
+> ─────────────────────────────────────────────────────────────────────────
+> 2026-03-10 16:00:00  BTC   $-12.30   0.0100   0.000100      0xabc12345...
+> 2026-03-10 08:00:00  ETH   $8.14    -2.5000  -0.000080      0xdef98765...
+> ...
 > ```
 
 ---

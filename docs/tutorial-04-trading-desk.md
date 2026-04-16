@@ -254,6 +254,62 @@ If you just want to get familiar with the process first, you can also continue p
 > 344740827952  xyz:NVDA  Buy   0.2000  50.0000  —
 > ```
 
+## New: Composite Actions (Close / Reverse / Scale / OTO / TP-SL)
+
+Once you're comfortable with basic order entry, this set of actions helps you execute common workflows faster.
+
+You can express them in natural language like this:
+
+> Help me close my current BTC position at market; repeat side and size first.
+
+> **Execution Result (example)**
+>
+> ```
+> Close position (market): BTC sell 0.2000 (filled)
+> ```
+
+---
+
+> Reverse my current ETH position with equal-size flip.
+
+> **Execution Result (example)**
+>
+> ```
+> Reverse position: ETH long -> short (close 1.0000 + open 1.0000)
+> ```
+
+---
+
+> Place a scale order for BTC from 100 to 110 with 5 levels and total size 1.
+
+> **Execution Result (example)**
+>
+> ```
+> Scale order: BTC buy
+> Range: 100.0000 -> 110.0000, Levels: 5, Total Size: 1.0000
+> Submitted: 5, Errors: 0
+> ```
+
+---
+
+> Create an OTO setup: entry at 100, take profit at 110, stop loss at 95.
+
+> **Execution Result (example)**
+>
+> ```
+> OTO created: BTC buy 0.5000 @ 100.0000 (TP 110.0000, SL 95.0000)
+> ```
+
+---
+
+> Attach TP/SL to my current position with TP 120 and SL 90.
+
+> **Execution Result (example)**
+>
+> ```
+> TP/SL attached: BTC long size 0.5000 (TP 120.0000, SL 90.0000)
+> ```
+
 ## Recommended Practice Order
 
 If you're starting to practice for the first time, you can practice in this order:

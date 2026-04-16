@@ -17,6 +17,7 @@ You can ask the agent to check:
 - Liquidation timeline snapshots
 - Trending markets
 - Leaderboard
+- HIP-3 fills for a specific coin
 
 ## How to Start
 
@@ -33,6 +34,7 @@ Then you can start looking at more specific data:
 > Check BTC order chart using book source
 > Check 1h all-market trending
 > Check leaderboard top 10, sorted by daily PnL
+> Check xyz:TSLA HIP-3 fills for the last day, top 20 rows
 
 ## Recommended Usage Order
 
@@ -45,6 +47,7 @@ Then you can start looking at more specific data:
 7. Check BTC order chart using book source
 8. Check 1h all-market trending
 9. Check leaderboard top 10, sorted by daily PnL
+10. Check xyz:TSLA HIP-3 fills for the last day, top 20 rows
 
 ### Execution Log
 
@@ -209,6 +212,24 @@ Then you can start looking at more specific data:
 > ─────────────────────────────
 > spot      50   page=1, limit=50, total=300
 > perp      50   page=1, limit=50, total=220
+> ```
+
+---
+
+**New: Check xyz:TSLA HIP-3 Fills for the Last Day, Top 20 Rows**
+
+> **Execution Result**
+>
+> ```
+> Onchain HIP-3 fills
+> Path: /api/v1/hip3/fills
+> Pagination: page=1, limit=20, total=156
+>
+> Time                 Coin      Side  Size    Price     Notional
+> ─────────────────────────────────────────────────────────────────
+> 2026-03-14 02:16:11  xyz:TSLA  B     1.5000  100.0000   150.00
+> 2026-03-14 02:15:54  xyz:TSLA  S     0.8000  100.2500    80.20
+> ...
 > ```
 
 ## What You'll Get

@@ -2,8 +2,12 @@ import { afterEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   placeOrder,
+  placeOrders,
   cancelOrders,
   cancelByCloid,
+  modifyOrder,
+  twapOrder,
+  twapCancel,
   updateLeverage,
   updateIsolatedMargin,
   approveBuilderFee,
@@ -26,6 +30,18 @@ function createFactoryProbe(methodImpls = {}) {
     cancelByCloid: async (params) => {
       calls.push({ method: 'cancelByCloid', params });
       return methodImpls.cancelByCloid ? methodImpls.cancelByCloid(params) : { statuses: [] };
+    },
+    modify: async (params) => {
+      calls.push({ method: 'modify', params });
+      return methodImpls.modify ? methodImpls.modify(params) : { status: 'ok' };
+    },
+    twapOrder: async (params) => {
+      calls.push({ method: 'twapOrder', params });
+      return methodImpls.twapOrder ? methodImpls.twapOrder(params) : { status: 'ok' };
+    },
+    twapCancel: async (params) => {
+      calls.push({ method: 'twapCancel', params });
+      return methodImpls.twapCancel ? methodImpls.twapCancel(params) : { status: 'ok' };
     },
     updateLeverage: async (params) => {
       calls.push({ method: 'updateLeverage', params });
@@ -139,6 +155,60 @@ describe('exchange-client SDK wrapper', () => {
     assert.deepEqual(probe.calls[0].params, { cancels: [{ a: 0, o: 123 }] });
   });
 
+  it('maps placeOrders to exchange.order with multiple orders', async () => {
+    const probe = createFactoryProbe();
+    __setExchangeClientFactoryForTest(probe.factory);
+
+    await placeOrders(
+      [
+        {
+          asset: 0,
+          isBuy: true,
+          price: '95000',
+          size: '0.01',
+          reduceOnly: false,
+          orderType: { limit: { tif: 'Gtc' } },
+          cloid: 'abc',
+        },
+        {
+          asset: 0,
+          isBuy: false,
+          price: '96000',
+          size: '0.02',
+          reduceOnly: false,
+          orderType: { limit: { tif: 'Gtc' } },
+        },
+      ],
+      '0xabc',
+      '0xagent',
+    );
+
+    assert.equal(probe.calls[0].method, 'order');
+    assert.equal(probe.calls[0].params.orders.length, 2);
+    assert.equal(probe.calls[0].params.orders[0].c, 'abc');
+  });
+
+  it('passes custom grouping to exchange.order', async () => {
+    const probe = createFactoryProbe();
+    __setExchangeClientFactoryForTest(probe.factory);
+
+    await placeOrders(
+      [{
+        asset: 0,
+        isBuy: true,
+        price: '95000',
+        size: '0.01',
+        reduceOnly: false,
+        orderType: { limit: { tif: 'Gtc' } },
+      }],
+      '0xabc',
+      '0xagent',
+      { grouping: 'positionTpsl' },
+    );
+
+    assert.equal(probe.calls[0].params.grouping, 'positionTpsl');
+  });
+
   it('maps cancelByCloid to exchange.cancelByCloid', async () => {
     const probe = createFactoryProbe();
     __setExchangeClientFactoryForTest(probe.factory);
@@ -148,6 +218,52 @@ describe('exchange-client SDK wrapper', () => {
     assert.equal(probe.calls[0].method, 'cancelByCloid');
     assert.deepEqual(probe.calls[0].params, { cancels: [{ asset: 0, cloid: 'c1' }] });
     assert.equal(probe.factoryCalls[0].opts.isTestnet, true);
+  });
+
+  it('maps modifyOrder to exchange.modify', async () => {
+    const probe = createFactoryProbe();
+    __setExchangeClientFactoryForTest(probe.factory);
+
+    await modifyOrder(
+      123,
+      {
+        asset: 0,
+        isBuy: true,
+        price: '95000',
+        size: '0.01',
+        reduceOnly: false,
+        orderType: { limit: { tif: 'Gtc' } },
+        cloid: 'abc',
+      },
+      '0xabc',
+      '0xagent',
+    );
+
+    assert.equal(probe.calls[0].method, 'modify');
+    assert.equal(probe.calls[0].params.oid, 123);
+    assert.equal(probe.calls[0].params.order.c, 'abc');
+  });
+
+  it('maps twapOrder to exchange.twapOrder', async () => {
+    const probe = createFactoryProbe();
+    __setExchangeClientFactoryForTest(probe.factory);
+
+    await twapOrder(1, true, '0.1', false, 10, true, '0xabc', '0xagent');
+
+    assert.equal(probe.calls[0].method, 'twapOrder');
+    assert.deepEqual(probe.calls[0].params, {
+      twap: { a: 1, b: true, s: '0.1', r: false, m: 10, t: true },
+    });
+  });
+
+  it('maps twapCancel to exchange.twapCancel', async () => {
+    const probe = createFactoryProbe();
+    __setExchangeClientFactoryForTest(probe.factory);
+
+    await twapCancel(1, 5, '0xabc', '0xagent');
+
+    assert.equal(probe.calls[0].method, 'twapCancel');
+    assert.deepEqual(probe.calls[0].params, { a: 1, t: 5 });
   });
 
   it('maps updateLeverage to exchange.updateLeverage', async () => {

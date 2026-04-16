@@ -43,4 +43,15 @@ describe('onchain parser', () => {
     assert.equal(parsed.flags.page, '1');
     assert.equal(parsed.flags.limit, '20');
   });
+
+  it('parses hip3-fills command', () => {
+    const parsed = parseInput('dpro-hl onchain hip3-fills xyz:TSLA --startTime 1 --endTime 2 --page 1 --limit 20');
+    assert.equal(parsed.domain, 'onchain');
+    assert.equal(parsed.action, 'hip3-fills');
+    assert.equal(parsed.target, 'XYZ:TSLA');
+    assert.equal(parsed.flags.startTime, '1');
+    assert.equal(parsed.flags.endTime, '2');
+    assert.equal(parsed.flags.page, '1');
+    assert.equal(parsed.flags.limit, '20');
+  });
 });

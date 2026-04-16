@@ -299,6 +299,35 @@ const formatters = {
     return renderTable(headers, rows, [3, 4, 5]);
   },
 
+  'order-history': (d) => {
+    if (!d.orders.length) return 'No historical orders.';
+    const headers = ['Time', 'OID', 'Coin', 'Side', 'Size', 'Price', 'Status'];
+    const rows = d.orders.map((o) => [
+      o.time ? new Date(Number(o.time)).toISOString().slice(0, 19).replace('T', ' ') : '—',
+      o.oid || '—',
+      o.coin || '—',
+      o.side || '—',
+      fmtNum(o.sz, 4),
+      fmtPx(o.px),
+      o.status || '—',
+    ]);
+    return renderTable(headers, rows, [4, 5]);
+  },
+
+  'funding-history': (d) => {
+    if (!d.items.length) return 'No funding history.';
+    const headers = ['Time', 'Coin', 'USDC', 'SZI', 'Funding Rate', 'Hash'];
+    const rows = d.items.map((item) => [
+      item.time ? new Date(Number(item.time)).toISOString().slice(0, 19).replace('T', ' ') : '—',
+      item.coin || '—',
+      fmtUsd(item.usdc),
+      fmtNum(item.szi, 4),
+      fmtNum(item.fundingRate, 6),
+      item.hash ? `${String(item.hash).slice(0, 10)}...` : '—',
+    ]);
+    return renderTable(headers, rows, [2, 3, 4]);
+  },
+
   order_result: (d) => {
     if (d.status === 'filled') return `Order filled: ${d.coin} ${d.side} ${d.size} @ ${fmtPx(d.price)}`;
     if (d.status === 'resting') return `Order resting: ${d.coin} ${d.side} ${d.size} @ ${fmtPx(d.price)} (oid: ${d.oid})`;
@@ -311,9 +340,93 @@ const formatters = {
     return `Order status: ${d.status}`;
   },
 
+  modify_result: (d) => {
+    if (d.status === 'error') return `Modify order failed: ${d.error || 'unknown error'}`;
+    return `Order modified: ${d.coin} ${d.side} ${d.size} @ ${fmtPx(d.price)} (oid: ${d.oid})`;
+  },
+
+  twap_result: (d) => {
+    if (d.status === 'error') return `TWAP ${d.action} failed: ${d.error || 'unknown error'}`;
+    if (d.action === 'create') {
+      const idPart = d.twapId != null ? ` (twapId: ${d.twapId})` : '';
+      return `TWAP created: ${d.coin} ${d.side} ${d.size} over ${d.minutes}m${idPart}`;
+    }
+    return `TWAP cancelled: ${d.coin} (twapId: ${d.twapId})`;
+  },
+
+  batch_order_result: (d) => {
+    const lines = [
+      `Batch orders: ${d.coin} ${d.side}`,
+      `Requested: ${d.total}, Submitted: ${d.submitted}, Errors: ${d.errors}`,
+    ];
+    const preview = (d.results || []).slice(0, 10).map((r) => [
+      fmtNum(r.size, 4),
+      fmtPx(r.price),
+      r.status,
+      r.oid || r.error || '—',
+    ]);
+    if (preview.length) {
+      lines.push('');
+      lines.push(renderTable(['Size', 'Price', 'Status', 'Detail'], preview, [0, 1]));
+    }
+    return lines.join('\n');
+  },
+
   cancel_result: (d) => d.cancelled ? `Cancelled order ${d.oid}` : `Cancel failed: ${d.error || 'unknown'}`,
 
   'cancel-all_result': (d) => `Cancelled ${d.count} order(s).`,
+
+  'cancel-multiple_result': (d) => {
+    const lines = [
+      `Cancelled ${d.cancelled}/${d.requested} requested order(s).`,
+    ];
+    if (d.skipped?.length) {
+      lines.push('Skipped:');
+      for (const item of d.skipped.slice(0, 10)) {
+        lines.push(`  ${item.oid}: ${item.reason}`);
+      }
+    }
+    return lines.join('\n');
+  },
+
+  close_result: (d) => {
+    const mode = d.mode || 'market';
+    if (mode === 'limit') {
+      return `Close position (${mode}): ${d.coin} ${d.side} ${d.size} @ ${fmtPx(d.price)} (${d.order?.status || 'submitted'})`;
+    }
+    return `Close position (${mode}): ${d.coin} ${d.side} ${d.size} (${d.order?.status || 'submitted'})`;
+  },
+
+  reverse_result: (d) => {
+    return `Reverse position: ${d.coin} ${d.fromSide} -> ${d.targetSide} (close ${fmtNum(d.closeSize, 4)} + open ${fmtNum(d.openExtraSize, 4)})`;
+  },
+
+  scale_result: (d) => {
+    const lines = [
+      `Scale order: ${d.coin} ${d.side}`,
+      `Range: ${fmtPx(d.from)} -> ${fmtPx(d.to)}, Levels: ${d.count}, Total Size: ${fmtNum(d.totalSize, 4)}`,
+      `Submitted: ${d.submitted}, Errors: ${d.errors}`,
+    ];
+    const preview = (d.levels || []).slice(0, 10).map((r) => [
+      fmtNum(r.size, 4),
+      fmtPx(r.price),
+      r.status,
+      r.oid || r.error || '—',
+    ]);
+    if (preview.length) {
+      lines.push('');
+      lines.push(renderTable(['Size', 'Price', 'Status', 'Detail'], preview, [0, 1]));
+    }
+    return lines.join('\n');
+  },
+
+  tpsl_result: (d) => {
+    return `TP/SL attached: ${d.coin} ${d.side} size ${fmtNum(d.size, 4)} (TP ${fmtPx(d.tp)}, SL ${fmtPx(d.sl)})`;
+  },
+
+  oto_result: (d) => {
+    return `OTO created: ${d.coin} ${d.side} ${fmtNum(d.size, 4)} @ ${fmtPx(d.entryPrice)} (TP ${fmtPx(d.tp)}, SL ${fmtPx(d.sl)})`;
+  },
 
   leverage_result: (d) => `Leverage set: ${d.coin} ${d.leverage}x ${d.mode}`,
 
@@ -513,6 +626,23 @@ const formatters = {
       getLeaderboardMetric(r, sortField),
     ]);
     return `Onchain leaderboard\nPath: ${d.path}\n\n` + renderTable(['Rank', 'User', valueHeader], tableRows, [0, 2]);
+  },
+  'onchain-hip3-fills': (d) => {
+    const payload = unwrapOnchainPayload(d.payload) || {};
+    const items = Array.isArray(payload.items) ? payload.items : firstArray(payload);
+    if (!items.length) return 'Onchain HIP-3 fills: empty';
+    const rows = items.slice(0, 20).map((item) => ([
+      item.blockTime
+        ? new Date(item.blockTime).toISOString().slice(0, 19).replace('T', ' ')
+        : (item.time ? new Date(item.time).toISOString().slice(0, 19).replace('T', ' ') : '—'),
+      item.coin || d.query?.coin || '—',
+      item.side || '—',
+      fmtNum(item.sz ?? item.size, 4),
+      fmtPx(item.px ?? item.price),
+      fmtNum(item.notionalUsd ?? item.notional, 2),
+    ]));
+    return `Onchain HIP-3 fills\nPath: ${d.path}\nPagination: ${formatPagination(payload.pagination)}\n\n`
+      + renderTable(['Time', 'Coin', 'Side', 'Size', 'Price', 'Notional'], rows, [3, 4, 5]);
   },
 };
 

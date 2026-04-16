@@ -118,6 +118,16 @@ export async function getUserFillsByTime(user, startTime, endTime, aggregateByTi
   return client.userFillsByTime({ user, startTime, endTime, aggregateByTime });
 }
 
+export async function getHistoricalOrders(user, opts = {}) {
+  const client = getClient(opts);
+  return client.historicalOrders({ user });
+}
+
+export async function getUserFunding(user, startTime = null, endTime = null, opts = {}) {
+  const client = getClient(opts);
+  return client.userFunding({ user, startTime, endTime });
+}
+
 export async function getUserRole(user, opts = {}) {
   const client = getClient(opts);
   return client.userRole({ user });

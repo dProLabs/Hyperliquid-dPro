@@ -36,7 +36,7 @@ export function __resetExchangeClientFactoryForTest() {
 }
 
 export async function placeOrder(orderSpec, privateKeyHex, _agentAddress, opts = {}) {
-  const { isTestnet = false, cloid, builder } = opts;
+  const { isTestnet = false, cloid, builder, grouping = 'na' } = opts;
   const exchange = exchangeClientFactory(privateKeyHex, { isTestnet });
   const order = {
     a: orderSpec.asset,
@@ -49,7 +49,7 @@ export async function placeOrder(orderSpec, privateKeyHex, _agentAddress, opts =
   if (cloid) order.c = cloid;
   const payload = {
     orders: [order],
-    grouping: 'na',
+    grouping,
   };
   if (builder?.b && Number.isFinite(Number(builder?.f))) {
     payload.builder = { b: builder.b, f: Number(builder.f) };
@@ -58,6 +58,79 @@ export async function placeOrder(orderSpec, privateKeyHex, _agentAddress, opts =
     return await exchange.order(payload);
   } catch (err) {
     throw classifyAndWrapError(err, 'Order rejected');
+  }
+}
+
+export async function placeOrders(orderSpecs, privateKeyHex, _agentAddress, opts = {}) {
+  const { isTestnet = false, builder, grouping = 'na' } = opts;
+  const exchange = exchangeClientFactory(privateKeyHex, { isTestnet });
+  const payload = {
+    orders: (orderSpecs || []).map((orderSpec) => ({
+      a: orderSpec.asset,
+      b: orderSpec.isBuy,
+      p: orderSpec.price,
+      s: orderSpec.size,
+      r: orderSpec.reduceOnly || false,
+      t: orderSpec.orderType,
+      ...(orderSpec.cloid ? { c: orderSpec.cloid } : {}),
+    })),
+    grouping,
+  };
+  if (builder?.b && Number.isFinite(Number(builder?.f))) {
+    payload.builder = { b: builder.b, f: Number(builder.f) };
+  }
+  try {
+    return await exchange.order(payload);
+  } catch (err) {
+    throw classifyAndWrapError(err, 'Batch order rejected');
+  }
+}
+
+export async function modifyOrder(oid, orderSpec, privateKeyHex, _agentAddress, opts = {}) {
+  const { isTestnet = false } = opts;
+  const exchange = exchangeClientFactory(privateKeyHex, { isTestnet });
+  const order = {
+    a: orderSpec.asset,
+    b: orderSpec.isBuy,
+    p: orderSpec.price,
+    s: orderSpec.size,
+    r: orderSpec.reduceOnly || false,
+    t: orderSpec.orderType,
+    ...(orderSpec.cloid ? { c: orderSpec.cloid } : {}),
+  };
+  try {
+    return await exchange.modify({ oid, order });
+  } catch (err) {
+    throw classifyAndWrapError(err, 'Modify order rejected');
+  }
+}
+
+export async function twapOrder(asset, isBuy, size, reduceOnly, minutes, randomize, privateKeyHex, _agentAddress, opts = {}) {
+  const { isTestnet = false } = opts;
+  const exchange = exchangeClientFactory(privateKeyHex, { isTestnet });
+  try {
+    return await exchange.twapOrder({
+      twap: {
+        a: asset,
+        b: isBuy,
+        s: size,
+        r: !!reduceOnly,
+        m: minutes,
+        t: !!randomize,
+      },
+    });
+  } catch (err) {
+    throw classifyAndWrapError(err, 'TWAP order rejected');
+  }
+}
+
+export async function twapCancel(asset, twapId, privateKeyHex, _agentAddress, opts = {}) {
+  const { isTestnet = false } = opts;
+  const exchange = exchangeClientFactory(privateKeyHex, { isTestnet });
+  try {
+    return await exchange.twapCancel({ a: asset, t: twapId });
+  } catch (err) {
+    throw classifyAndWrapError(err, 'TWAP cancel rejected');
   }
 }
 
