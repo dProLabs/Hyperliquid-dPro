@@ -10,10 +10,11 @@ Goal:
 ## Recommended Reading Order
 
 1. [Tutorial 1: Learning to Read the Market First](tutorial-01-market-radar.md)
-2. [Tutorial 2: Adding Addresses to Your Account List](tutorial-02-account-radar.md)
-3. [Tutorial 3: Reading Onchain Distribution](tutorial-03-onchain-reads.md)
-4. Optional before trading: [Tutorial 5: Finding Onchain Alpha Signals](tutorial-05-onchain-alpha-radar.md)
-5. [Tutorial 4: Trading Desk Setup — Account Readiness, Transfers, and Order Entry](tutorial-04-trading-desk.md)
+2. Optional after market reads: [Tutorial 6: Researching Assets Before You Trade](tutorial-06-asset-radar.md)
+3. [Tutorial 2: Adding Addresses to Your Account List](tutorial-02-account-radar.md)
+4. [Tutorial 3: Reading Onchain Distribution](tutorial-03-onchain-reads.md)
+5. Optional before trading: [Tutorial 5: Finding Onchain Alpha Signals](tutorial-05-onchain-alpha-radar.md)
+6. [Tutorial 4: Trading Desk Setup — Account Readiness, Transfers, and Order Entry](tutorial-04-trading-desk.md)
 
 ## What Each Tutorial Covers
 
@@ -21,6 +22,11 @@ Goal:
 
 For users starting from zero.
 You will learn how to check quotes, order books, candles, and movers quickly.
+
+### Tutorial 6: Researching Assets Before You Trade
+
+For users who want read-only asset context before account or trading workflows.
+You will learn how to search assets, open asset profiles, check candles, compare exchange pairs, read RWA rows, inspect SEC filings, and review global asset stats.
 
 ### Tutorial 2: Adding Addresses to Your Account List
 
@@ -45,5 +51,6 @@ You will learn account readiness checks, master-key requirements for transfers, 
 ## Usage Advice
 
 If you are new, finish Tutorials 1-3 before trading.
+Use Tutorial 6 after Tutorial 1 if you want asset metadata and venue context before wallet or onchain research.
 Use Tutorial 5 as an optional read-only research step if you want deeper onchain context.
 Then complete Tutorial 4 before executing live orders.
