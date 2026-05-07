@@ -12,7 +12,8 @@ Goal:
 1. [Tutorial 1: Learning to Read the Market First](tutorial-01-market-radar.md)
 2. [Tutorial 2: Adding Addresses to Your Account List](tutorial-02-account-radar.md)
 3. [Tutorial 3: Reading Onchain Distribution](tutorial-03-onchain-reads.md)
-4. [Tutorial 4: Trading Desk Setup — Account Readiness, Transfers, and Order Entry](tutorial-04-trading-desk.md)
+4. Optional before trading: [Tutorial 5: Finding Onchain Alpha Signals](tutorial-05-onchain-alpha-radar.md)
+5. [Tutorial 4: Trading Desk Setup — Account Readiness, Transfers, and Order Entry](tutorial-04-trading-desk.md)
 
 ## What Each Tutorial Covers
 
@@ -31,6 +32,11 @@ You will learn readonly account setup and account-state queries.
 For users already comfortable with market/account reads.
 You will learn onchain holder queries, order-distribution views, liquidation map views, and trending/leaderboard reads.
 
+### Tutorial 5: Finding Onchain Alpha Signals
+
+For users who want deeper read-only signals before trading.
+You will learn how to ask natural-language questions about prediction markets, Hype TradFi rankings, and smart-trader performance.
+
 ### Tutorial 4: Trading Desk Setup
 
 For users ready to place real orders.
@@ -39,4 +45,5 @@ You will learn account readiness checks, master-key requirements for transfers, 
 ## Usage Advice
 
 If you are new, finish Tutorials 1-3 before trading.
+Use Tutorial 5 as an optional read-only research step if you want deeper onchain context.
 Then complete Tutorial 4 before executing live orders.
