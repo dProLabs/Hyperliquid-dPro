@@ -1,13 +1,13 @@
 ---
 name: dpro-hl
-description: "Use this skill for Hyperliquid and dPro workflows: market/account reads, news reads, account readiness checks, spot-perp fund transfers, explicitly confirmed live trading, and dPro onchain analytics. Supports spot, perp, and HIP-3 assets with strict symbol matching, explicit market namespaces for trading, account resolution, preflight checks, and post-submit verification."
+description: "Use this skill for Hyperliquid and dPro workflows: market/account reads, asset reads, news reads, account readiness checks, spot-perp fund transfers, explicitly confirmed live trading, and dPro onchain analytics. Supports spot, perp, and HIP-3 assets with strict symbol matching, explicit market namespaces for trading, account resolution, preflight checks, and post-submit verification."
 ---
 
 # dpro-hl
 
-Use this skill for Hyperliquid-only workflows backed by the dPro command surface, dPro news API, and dPro read-only onchain API.
+Use this skill for Hyperliquid-only workflows backed by the dPro command surface, dPro assets API, dPro news API, and dPro read-only onchain API.
 
-This skill supports six domains inside one skill:
+This skill supports seven domains inside one skill:
 
 1. market reads
 2. account reads and account readiness checks
@@ -15,6 +15,7 @@ This skill supports six domains inside one skill:
 4. live trading writes
 5. dPro onchain read-only analytics
 6. dPro news reads
+7. dPro asset reads
 
 This file defines the **routing policy**, **execution policy**, and **safety policy**.
 
@@ -22,6 +23,7 @@ Do not duplicate the full command reference here.
 Use the reference files for full command details:
 
 - `references/commands.md`
+- `references/assets.md`
 - `references/onchain.md`
 - `references/news.md`
 - `references/troubleshooting.md`
@@ -33,6 +35,7 @@ Use the reference files for full command details:
 Use this skill when the user wants to do any of the following on Hyperliquid:
 
 - check quotes, order books, candles, movers, overview, or supported markets
+- inspect dPro asset metadata, asset lists, search results, klines, tickers, RWA rows, SEC filings, or global stats
 - inspect latest dPro asset news by Hyperliquid-aware symbols
 - inspect balances, positions, orders, fills, or portfolio state
 - transfer funds between spot and perp balance buckets
@@ -57,7 +60,13 @@ Use for:
 - global flags
 - canonical command syntax
 - accepted input modes
-- market/account/trade/news/onchain command examples
+- market/account/trade/asset/news/onchain command examples
+
+### `references/assets.md`
+Use for:
+- assets API base URL and request rules
+- asset endpoint mapping
+- asset query parameters and response-shape handling
 
 ### `references/onchain.md`
 Use for:
@@ -125,6 +134,7 @@ Families:
 - perp trade writes
 - hip3 trade writes
 - builder approval
+- asset reads
 - news reads
 - onchain reads
 
@@ -166,7 +176,22 @@ Examples:
 - `dpro-hl fills main --limit 20`
 - `dpro-hl builder-approval main`
 
-### 3. News read branch
+### 3. Asset read branch
+Use for:
+- dPro asset search and metadata
+- asset list pages by asset type
+- asset klines, exchange pairs, and RWA rows
+- SEC filings and global stats
+
+Examples:
+- `dpro-hl asset search BTC`
+- `dpro-hl asset ls --type CRYPTO --limit 20`
+- `dpro-hl asset detail 3202730`
+- `dpro-hl asset klines 3202730 --interval H1 --limit 100`
+- `dpro-hl asset pairs 3202730 --venue cex --market-type spot`
+- `dpro-hl asset stats`
+
+### 4. News read branch
 Use for:
 - latest news lists
 - asset-filtered news by `assetSymbol`
@@ -178,7 +203,7 @@ Examples:
 - `dpro-hl news --asset xyz:AAPL --category hot-24h --locale en`
 - `dpro-hl news detail 12345 --locale zh-CN`
 
-### 4. Transfer branch
+### 5. Transfer branch
 Use for:
 - top-level `transfer` requests between spot and perp buckets
 
@@ -187,7 +212,7 @@ Examples:
 - `dpro-hl transfer 25 --to spot`
 - `dpro-hl transfer 5 --to perp --account main`
 
-### 5. Trade write branch
+### 6. Trade write branch
 Use for:
 - any `spot order ...`
 - any `perp order ...`
@@ -200,7 +225,7 @@ Examples:
 - `dpro-hl hip3 order limit buy 1 xyz:NVDA 120`
 - `dpro-hl perp order set-leverage BTC 5 --cross`
 
-### 6. Onchain read branch
+### 7. Onchain read branch
 Use for:
 - any `dpro-hl onchain ...` request
 
@@ -215,6 +240,17 @@ Examples:
 - `dpro-hl onchain hip3-smart-trader xyz:TSLA --sort pnlPct --limit 10`
 - `dpro-hl onchain trending --period 1h --market all`
 - `dpro-hl onchain leaderboard --limit 10`
+
+## Asset execution policy
+
+For any `dpro-hl asset ...` request:
+
+1. use the public read-only dPro assets API
+2. do not prompt for account selection, API-wallet password, or master-wallet password
+3. prefer `asset search <query>` to resolve asset IDs before detail, klines, pairs, or SEC filing reads
+4. consume the wrapped API response through `data`
+5. do not promise Hyperliquid-aware symbol resolution for generic asset endpoints; only news has native `assetSymbol` support
+6. use `--json` when the user asks for raw structured data
 
 ## News execution policy
 
@@ -659,6 +695,7 @@ Preserve structured fields where available, such as:
 - size
 - price
 - slippage
+- assetId
 - orderId
 - newsId
 - cloid
@@ -683,6 +720,10 @@ If the user asks for raw structured data, use `--json` when supported.
 - “Show me latest BTC news”
   -> news read branch
   -> normalize to `dpro-hl news BTC`
+
+- “Search for BTC in the asset database”
+  -> asset read branch
+  -> normalize to `dpro-hl asset search BTC`
 
 - “Buy 10 PURR spot at 0.08”
   -> trade write branch

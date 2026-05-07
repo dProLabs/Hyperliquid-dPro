@@ -25,6 +25,7 @@ These flags can be used across commands when applicable.
 
 | Variable | Description | Default |
 |---|---|---|
+| `DPRO_HL_ASSET_BASE_URL` | Override dPro assets API base URL | `https://assets-api.d.pro` |
 | `DPRO_HL_NEWS_BASE_URL` | Override dPro assets news API base URL | `https://assets-api.d.pro` |
 
 ## Input Modes
@@ -96,6 +97,71 @@ Get combined market overview sections.
 ### `dpro-hl markets ls`
 
 List markets and symbols. Use this output as symbol source of truth.
+
+---
+
+## Asset Commands
+
+Asset commands are read-only and do not require Hyperliquid account credentials.
+
+### `dpro-hl asset search <query>`
+
+Search the dPro asset database. Use this first to resolve an `assetId` for detail, klines, pairs, or SEC filing commands.
+
+**Examples:**
+```bash
+dpro-hl asset search BTC
+dpro-hl asset search "Apple Inc"
+```
+
+### `dpro-hl asset ls --type CRYPTO|STOCK|ETF|FOREX|COMMODITY [--market <code>] [--sort <field>] [--order asc|desc] [--page N] [--limit N]`
+
+List assets by type.
+
+**Options:**
+| Option | Description |
+|---|---|
+| `--type <type>` | Required asset type |
+| `--market <code>` | Stock market filter, for example `US`, `HK`, or `OTHER` |
+| `--sort <field>` | Sort field, default `marketCap` |
+| `--order asc\|desc` | Sort order |
+| `--page N` | Page number, default `1` |
+| `--limit N` | Rows to request, default `20`, max `100` |
+
+**Example:**
+```bash
+dpro-hl asset ls --type CRYPTO --sort marketCap --limit 20
+```
+
+### `dpro-hl asset detail <assetId>`
+
+Get one asset with metadata.
+
+### `dpro-hl asset klines <assetId> [--interval M1|M5|M15|H1|H4|D1|W1|MN1] [--limit N]`
+
+Get asset candles. Default interval is `H1`; max limit is `500`.
+
+### `dpro-hl asset pairs <assetId> [--venue all|cex|dex] [--market-type all|spot|perp|futures] [--page N] [--limit N]`
+
+Get exchange pairs / tickers for an asset. Max limit is `100`.
+
+Aliases: `asset tickers <assetId>`, `asset markets <assetId>`.
+
+### `dpro-hl asset sec-filings <assetId> [--page N] [--limit N]`
+
+Get SEC filing rows linked to an asset.
+
+Aliases: `asset filings <assetId>`, `asset sec <assetId>`.
+
+### `dpro-hl asset rwa [--sort <field>] [--order asc|desc] [--page N] [--limit N]`
+
+List RWA rows from the dPro asset database.
+
+### `dpro-hl asset stats`
+
+Get global asset market stats.
+
+See `references/assets.md` for upstream API response shapes and known docs/code mismatches.
 
 ---
 

@@ -106,6 +106,63 @@ describe('parser', () => {
     });
   });
 
+  describe('asset commands', () => {
+    it('parses asset search', () => {
+      const r = parseInput('dpro-hl asset search Bitcoin');
+      assert.equal(r.domain, 'asset');
+      assert.equal(r.action, 'search');
+      assert.equal(r.args.query, 'Bitcoin');
+    });
+
+    it('parses asset list', () => {
+      const r = parseInput('dpro-hl asset ls --type CRYPTO --limit 20');
+      assert.equal(r.domain, 'asset');
+      assert.equal(r.action, 'ls');
+      assert.equal(r.flags.type, 'CRYPTO');
+      assert.equal(r.flags.limit, '20');
+    });
+
+    it('parses asset detail', () => {
+      const r = parseInput('dpro-hl asset detail 3202730');
+      assert.equal(r.domain, 'asset');
+      assert.equal(r.action, 'detail');
+      assert.equal(r.target, '3202730');
+    });
+
+    it('parses asset klines', () => {
+      const r = parseInput('dpro-hl asset klines 3202730 --interval H1 --limit 100');
+      assert.equal(r.domain, 'asset');
+      assert.equal(r.action, 'klines');
+      assert.equal(r.target, '3202730');
+      assert.equal(r.flags.interval, 'H1');
+    });
+
+    it('parses asset pairs alias', () => {
+      const r = parseInput('dpro-hl asset tickers 3202730 --venue cex --market-type spot');
+      assert.equal(r.domain, 'asset');
+      assert.equal(r.action, 'pairs');
+      assert.equal(r.target, '3202730');
+      assert.equal(r.flags.venue, 'cex');
+      assert.equal(r.flags['market-type'], 'spot');
+    });
+
+    it('parses asset sec-filings alias', () => {
+      const r = parseInput('dpro-hl asset filings 100 --limit 10');
+      assert.equal(r.domain, 'asset');
+      assert.equal(r.action, 'sec-filings');
+      assert.equal(r.target, '100');
+    });
+
+    it('parses asset rwa and stats', () => {
+      const rwa = parseInput('dpro-hl asset rwa --limit 5');
+      assert.equal(rwa.domain, 'asset');
+      assert.equal(rwa.action, 'rwa');
+      const stats = parseInput('dpro-hl asset stats');
+      assert.equal(stats.domain, 'asset');
+      assert.equal(stats.action, 'stats');
+    });
+  });
+
   describe('account commands', () => {
     it('rejects deprecated --password flag', () => {
       assert.throws(

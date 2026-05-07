@@ -317,6 +317,57 @@ function formatNewsFilters(query = {}) {
   return filters.length ? `Filters: ${filters.join(', ')}` : 'Filters: all';
 }
 
+function fmtAssetPct(value) {
+  if (value == null || value === '') return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return String(value);
+  const sign = n >= 0 ? '+' : '';
+  return `${sign}${n.toFixed(2)}%`;
+}
+
+function normalizePagedPayload(payload) {
+  const unwrapped = unwrapOnchainPayload(payload);
+  if (Array.isArray(unwrapped)) {
+    return { items: unwrapped, total: unwrapped.length, page: null, limit: null, hasNext: null };
+  }
+  if (!unwrapped || typeof unwrapped !== 'object') {
+    return { items: [], total: 0, page: null, limit: null, hasNext: null };
+  }
+  return {
+    items: Array.isArray(unwrapped.items) ? unwrapped.items : firstArray(unwrapped),
+    total: unwrapped.total,
+    page: unwrapped.page,
+    limit: unwrapped.limit,
+    hasNext: unwrapped.hasNext,
+  };
+}
+
+function assetName(row) {
+  return compactText(row?.displayNameWithMarket || row?.displayName || row?.name, 40);
+}
+
+function assetHeaderLines(title, d, payload) {
+  const totalText = payload?.total != null ? ` of ${payload.total}` : '';
+  const lines = [`${title} (${payload?.items?.length ?? 0}${totalText})`];
+  if (d.query?.page || payload?.page) lines.push(`Page: ${payload?.page ?? d.query?.page}  Limit: ${payload?.limit ?? d.query?.limit ?? '—'}`);
+  if (d.meta?.cache) lines.push(`Cache: ${d.meta.cache}`);
+  return lines;
+}
+
+function formatAssetRows(items) {
+  return items.slice(0, 20).map((item) => [
+    item.id ?? '—',
+    item.symbol || '—',
+    item.type || '—',
+    item.market || '—',
+    item.rank ?? '—',
+    fmtPx(item.price),
+    fmtAssetPct(item.change24h),
+    fmtUsd(item.marketCap),
+    assetName(item),
+  ]);
+}
+
 // --- Result formatters by type ---
 
 const formatters = {
@@ -448,6 +499,146 @@ const formatters = {
       lines.push(`URL: ${item.url}`);
     }
 
+    return lines.join('\n');
+  },
+
+  'asset-search': (d) => {
+    const items = firstArray(unwrapOnchainPayload(d.payload));
+    if (!items.length) return `Asset search\nQuery: ${d.query?.q || '—'}\nNo assets found.`;
+    return `Asset search\nQuery: ${d.query?.q || '—'}\n\n`
+      + renderTable(['ID', 'Symbol', 'Type', 'Market', 'Rank', 'Price', '24h', 'MCap', 'Name'], formatAssetRows(items), [0, 4, 5, 6, 7]);
+  },
+
+  'asset-list': (d) => {
+    const payload = normalizePagedPayload(d.payload);
+    const lines = assetHeaderLines(`Assets ${d.query?.type || ''}`.trim(), d, payload);
+    if (!payload.items.length) return `${lines.join('\n')}\n\nNo assets found.`;
+    return `${lines.join('\n')}\n\n`
+      + renderTable(['ID', 'Symbol', 'Type', 'Market', 'Rank', 'Price', '24h', 'MCap', 'Name'], formatAssetRows(payload.items), [0, 4, 5, 6, 7]);
+  },
+
+  'asset-rwa': (d) => {
+    const payload = normalizePagedPayload(d.payload);
+    const lines = assetHeaderLines('RWA assets', d, payload);
+    if (!payload.items.length) return `${lines.join('\n')}\n\nNo RWA assets found.`;
+    const rows = payload.items.slice(0, 20).map((item) => [
+      item.rank ?? '—',
+      item.symbol || '—',
+      compactText(item.name, 34),
+      fmtPx(item.rwaPrice),
+      fmtPx(item.avgTokenPrice),
+      fmtAssetPct(item.changePct),
+      fmtUsd(item.marketCap),
+      fmtUsd(item.volume),
+      item.linkedAssetSymbol || '—',
+    ]);
+    return `${lines.join('\n')}\n\n`
+      + renderTable(['Rank', 'Symbol', 'Name', 'RWA Px', 'Token Px', 'Change', 'MCap', 'Volume', 'Linked'], rows, [0, 3, 4, 5, 6, 7]);
+  },
+
+  'asset-detail': (d) => {
+    const item = unwrapOnchainPayload(d.payload) || {};
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      return `Asset detail\nPath: ${d.path}\n` + JSON.stringify(item, null, 2);
+    }
+    const lines = [`Asset #${item.id ?? '—'} ${item.symbol || ''}`.trim()];
+    lines.push(assetName(item));
+    lines.push('');
+    lines.push(`Type: ${item.type || '—'}${item.market ? ` / ${item.market}` : ''}`);
+    lines.push(`Rank: ${item.rank ?? '—'}`);
+    lines.push(`Price: ${fmtPx(item.price)}  24h: ${fmtAssetPct(item.change24h)}  7d: ${fmtAssetPct(item.change7d)}`);
+    lines.push(`Market cap: ${fmtUsd(item.marketCap)}  Volume 24h: ${fmtUsd(item.volume24h)}`);
+    if (item.high24h != null || item.low24h != null) lines.push(`24h range: ${fmtPx(item.low24h)} - ${fmtPx(item.high24h)}`);
+    if (item.isRwa != null) lines.push(`RWA: ${item.isRwa ? 'yes' : 'no'}`);
+    if (item.priceUpdatedAt) lines.push(`Price updated: ${fmtDateTime(item.priceUpdatedAt)}`);
+    if (d.meta?.cache) lines.push(`Cache: ${d.meta.cache}`);
+
+    const crypto = item.cryptoMeta;
+    if (crypto && typeof crypto === 'object') {
+      lines.push('');
+      lines.push('Crypto metadata:');
+      if (crypto.categories?.length) lines.push(`Categories: ${crypto.categories.slice(0, 8).join(', ')}`);
+      if (crypto.website) lines.push(`Website: ${crypto.website}`);
+      if (crypto.description) lines.push(`Description: ${compactBlock(crypto.description, 700)}`);
+    }
+
+    const stock = item.stockMeta;
+    if (stock && typeof stock === 'object') {
+      lines.push('');
+      lines.push('Stock metadata:');
+      if (stock.companyName) lines.push(`Company: ${stock.companyName}`);
+      if (stock.exchange || stock.currency) lines.push(`Exchange: ${stock.exchange || '—'}  Currency: ${stock.currency || '—'}`);
+      if (stock.sector || stock.industry) lines.push(`Sector: ${stock.sector || '—'}  Industry: ${stock.industry || '—'}`);
+    }
+
+    return lines.join('\n');
+  },
+
+  'asset-klines': (d) => {
+    const rows = firstArray(unwrapOnchainPayload(d.payload));
+    if (!rows.length) return `Asset klines\nPath: ${d.path}\nNo candles.`;
+    const tableRows = rows.slice(-20).map((row) => [
+      fmtDateTime(row.openTime ?? row.t),
+      fmtPx(row.open ?? row.o),
+      fmtPx(row.high ?? row.h),
+      fmtPx(row.low ?? row.l),
+      fmtPx(row.close ?? row.c),
+      fmtNum(row.volume ?? row.v, 2),
+    ]);
+    return `Asset klines\nPath: ${d.path}\nInterval: ${d.query?.interval || 'H1'}  Rows: ${rows.length}\n\n`
+      + renderTable(['Time', 'Open', 'High', 'Low', 'Close', 'Volume'], tableRows, [1, 2, 3, 4, 5]);
+  },
+
+  'asset-pairs': (d) => {
+    const payload = normalizePagedPayload(d.payload);
+    const lines = assetHeaderLines('Asset pairs', d, payload);
+    if (payload.hasNext != null) lines.push(`Has next: ${payload.hasNext ? 'yes' : 'no'}`);
+    if (!payload.items.length) return `${lines.join('\n')}\n\nNo pairs found.`;
+    const rows = payload.items.slice(0, 20).map((row) => [
+      row.exchange || '—',
+      row.venue || '—',
+      row.marketType || '—',
+      row.pair || '—',
+      fmtPx(row.price),
+      fmtUsd(row.volume24h),
+      fmtPx(row.bid),
+      fmtPx(row.ask),
+      row.fundingRate != null ? fmtPctLiteral(row.fundingRate) : '—',
+      fmtUsd(row.openInterest),
+    ]);
+    return `${lines.join('\n')}\n\n`
+      + renderTable(['Exchange', 'Venue', 'Type', 'Pair', 'Price', 'Vol 24h', 'Bid', 'Ask', 'Funding', 'OI'], rows, [4, 5, 6, 7, 8, 9]);
+  },
+
+  'asset-sec-filings': (d) => {
+    const payload = normalizePagedPayload(d.payload);
+    const lines = assetHeaderLines('SEC filings', d, payload);
+    if (!payload.items.length) return `${lines.join('\n')}\n\nNo SEC filings found.`;
+    const rows = payload.items.slice(0, 20).map((row) => [
+      row.formType || '—',
+      fmtDateTime(row.filingDate),
+      row.accessionNo || '—',
+      compactText(row.description, 56),
+      row.reportUrl ? 'yes' : 'no',
+    ]);
+    return `${lines.join('\n')}\n\n`
+      + renderTable(['Form', 'Filing Date', 'Accession', 'Description', 'URL'], rows);
+  },
+
+  'asset-stats': (d) => {
+    const stats = unwrapOnchainPayload(d.payload) || {};
+    if (!stats || typeof stats !== 'object' || Array.isArray(stats)) {
+      return 'Asset global stats\n' + JSON.stringify(stats, null, 2);
+    }
+    const lines = ['Asset global stats'];
+    lines.push(`Total market cap: ${fmtUsd(stats.totalMarketCap)}`);
+    lines.push(`Total volume 24h: ${fmtUsd(stats.totalVolume24h)}`);
+    lines.push(`BTC dominance: ${fmtAssetPct(stats.btcDominance)}`);
+    lines.push(`ETH dominance: ${fmtAssetPct(stats.ethDominance)}`);
+    if (stats.fearGreedIndex != null || stats.fearGreedLabel) lines.push(`Fear/greed: ${stats.fearGreedIndex ?? '—'} ${stats.fearGreedLabel || ''}`.trim());
+    if (stats.activeCryptos != null) lines.push(`Active cryptos: ${fmtNum(stats.activeCryptos, 0)}`);
+    if (stats.snapshotAt) lines.push(`Snapshot: ${fmtDateTime(stats.snapshotAt)}`);
+    if (d.meta?.cache) lines.push(`Cache: ${d.meta.cache}`);
     return lines.join('\n');
   },
 

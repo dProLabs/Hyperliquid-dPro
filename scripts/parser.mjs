@@ -136,6 +136,16 @@ const ONCHAIN_COIN_ACTIONS = new Set([
   'hip3-smart-trader',
 ]);
 const NEWS_ACTION_ALIASES = new Set(['list', 'ls']);
+const ASSET_ACTION_ALIASES = new Map([
+  ['list', 'ls'],
+  ['tickers', 'pairs'],
+  ['markets', 'pairs'],
+  ['filings', 'sec-filings'],
+  ['sec', 'sec-filings'],
+  ['global-stats', 'stats'],
+]);
+const ASSET_ID_ACTIONS = new Set(['detail', 'klines', 'pairs', 'sec-filings']);
+const ASSET_NO_TARGET_ACTIONS = new Set(['ls', 'rwa', 'stats']);
 const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
 // --- Structured command parsing ---
@@ -219,6 +229,46 @@ function parseStructured(tokens, flags, raw) {
     };
   }
 
+  // Asset data reads: "asset search BTC", "asset detail 123", "asset ls --type CRYPTO".
+  if (first === 'asset' || first === 'assets') {
+    const rawAction = tokens[1]?.toLowerCase();
+    const action = ASSET_ACTION_ALIASES.get(rawAction) || rawAction;
+    if (!action) {
+      throw inputError('Usage: dpro-hl asset search <query> | ls --type <type> | detail <id> | klines <id> | pairs <id> | sec-filings <id> | rwa | stats');
+    }
+
+    if (action === 'search') {
+      const query = tokens.slice(2).join(' ').trim();
+      if (!query) throw inputError('Usage: dpro-hl asset search <query>');
+      return { domain: 'asset', action: 'search', target: null, args: { query }, flags, raw };
+    }
+
+    if (ASSET_ID_ACTIONS.has(action)) {
+      if (!tokens[2]) throw inputError(`Usage: dpro-hl asset ${action} <assetId>`);
+      return {
+        domain: 'asset',
+        action,
+        target: tokens[2],
+        args: { rest: tokens.slice(3) },
+        flags,
+        raw,
+      };
+    }
+
+    if (ASSET_NO_TARGET_ACTIONS.has(action)) {
+      return {
+        domain: 'asset',
+        action,
+        target: null,
+        args: { rest: tokens.slice(2) },
+        flags,
+        raw,
+      };
+    }
+
+    throw unknownCommand('Unknown asset action: ' + action + '. Available: search, ls, detail, klines, pairs, sec-filings, rwa, stats');
+  }
+
   // Account actions: "account add-readonly 0x... alias"
   if (first === 'account') {
     const action = tokens[1]?.toLowerCase();
@@ -291,7 +341,7 @@ function parseStructured(tokens, flags, raw) {
     };
   }
 
-  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, news, transfer, onchain, account, spot order, perp order, hip3 order, approve-builder, builder-approval, positions, balances, orders, fills, order-history, funding-history, twap-history, twap-fill-history`);
+  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, asset, news, transfer, onchain, account, spot order, perp order, hip3 order, approve-builder, builder-approval, positions, balances, orders, fills, order-history, funding-history, twap-history, twap-fill-history`);
 }
 
 function parseTradeAction(marketType, tokens, flags, raw) {
