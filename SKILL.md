@@ -38,7 +38,7 @@ Use this skill when the user wants to do any of the following on Hyperliquid:
 - transfer funds between spot and perp balance buckets
 - place, cancel, or manage spot / perp / HIP-3 trades
 - adjust leverage or isolated margin on perp-style instruments
-- query dPro onchain analytics such as mids, holders, liquidation maps, or leaderboard
+- query dPro onchain analytics such as mids, holders, liquidation maps, prediction reads, TradFi rankings, smart-trader rankings, or leaderboard
 
 Do not use this skill for:
 
@@ -210,6 +210,9 @@ Examples:
 - `dpro-hl onchain spot-holders PURR --limit 5`
 - `dpro-hl onchain orders-book BTC --page 1 --limit 20`
 - `dpro-hl onchain liqmap BTC --groupBy all`
+- `dpro-hl onchain prediction-orders-book --outcome-id 9 --side 0`
+- `dpro-hl onchain tradfi-volume-top --limit 5`
+- `dpro-hl onchain hip3-smart-trader xyz:TSLA --sort pnlPct --limit 10`
 - `dpro-hl onchain trending --period 1h --market all`
 - `dpro-hl onchain leaderboard --limit 10`
 

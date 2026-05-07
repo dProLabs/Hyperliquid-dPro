@@ -59,12 +59,22 @@ Do not prompt for account selection, password, or API-wallet setup for onchain c
 | `dpro-hl onchain orders-book <coin>` | GET | `/api/v1/hl/orders/book` | paginated order book rows |
 | `dpro-hl onchain orders-untriggered <coin>` | GET | `/api/v1/hl/orders/untriggered` | paginated conditional order rows |
 | `dpro-hl onchain orders-chart <coin>` | GET | `/api/v1/hl/orders/chart` | order chart bins + cumulative curves |
+| `dpro-hl onchain prediction-positions <outcomeId>` | GET | `/api/v1/hl/prediction/positions` | prediction outcome holder positions |
+| `dpro-hl onchain prediction-orders-book` | GET | `/api/v1/hl/prediction/orders/book` | prediction order book rows |
+| `dpro-hl onchain prediction-orders-book-batch` | GET | `/api/v1/hl/prediction/orders/book/batch` | batch prediction order books |
+| `dpro-hl onchain prediction-orders-untriggered` | GET | `/api/v1/hl/prediction/orders/untriggered` | prediction conditional order rows |
+| `dpro-hl onchain prediction-orders-untriggered-batch` | GET | `/api/v1/hl/prediction/orders/untriggered/batch` | batch prediction conditional orders |
+| `dpro-hl onchain tradfi-volume-top` | GET | `/api/v1/hl/tradfi/volume-top` | Hype TradFi 24h volume leaders |
+| `dpro-hl onchain tradfi-gainers-top` | GET | `/api/v1/hl/tradfi/gainers-top` | Hype TradFi 24h gainer leaders |
+| `dpro-hl onchain tradfi-gainers-holder-pnl-top` | GET | `/api/v1/hl/tradfi/gainers-holder-pnl-top` | top PnL holders for top TradFi gainers |
 | `dpro-hl onchain liqmap <coin>` | GET | `/api/v1/hl/liqmap` | liquidation heatmap bins |
 | `dpro-hl onchain liquidation-map <coin>` | GET | `/api/v1/hl/liqmap` | compatibility alias for `liqmap` |
 | `dpro-hl onchain liqmap-timeline <coin>` | GET | `/api/v1/hl/liqmap/timeline` | historical liquidation snapshots |
 | `dpro-hl onchain trending` | GET | `/api/v1/hl/trending` | spot/perp trending rows |
 | `dpro-hl onchain leaderboard` | GET | `/api/v1/leaderboard` | leaderboard rows |
 | `dpro-hl onchain hip3-fills <coin>` | GET | `/api/v1/hip3/fills` | HIP-3 fill rows |
+| `dpro-hl onchain hip3-smart-trader <coin>` | GET | `/api/v1/hip3/smart-trader` | HIP-3 trader PnL rankings |
+| `dpro-hl onchain hip4-smart-trader <tokenId>` | GET | `/api/v1/hip4/smart-trader` | HIP-4 trader PnL rankings |
 
 Only these commands are in scope for the onchain branch.
 
@@ -120,6 +130,19 @@ For endpoints that support paging:
 For endpoints that support sorting:
 - pass through supported `--sort` and `--order` values
 - do not invent unsupported sort keys
+
+### Prediction normalization
+Prediction orders can be queried by prediction coin encoding or outcome/side.
+- Prefer `--outcome-id <N> --side 0|1` for shell-friendly commands.
+- `--coin '#90'` is accepted where supported, but quote or escape `#` in shells.
+- Batch commands accept `--outcome-ids 9,10 [--sides 0,1]` or `--coins '#90,#91'`.
+- Batch commands are capped at 30 resolved prediction coins.
+
+### TradFi and smart-trader normalization
+- TradFi ranking commands currently support only `period=24h` and `limit <= 50`.
+- Smart trader commands support `sort=pnlPct|pnl|totalBuy|totalSell|portfolioValue|lastTradeAt`, `order=asc|desc`, and `limit <= 500`.
+- `hip3-smart-trader` uses coin normalization, including `xyz:tsla -> xyz:TSLA`.
+- `hip4-smart-trader` uses `tokenId`; do not apply coin normalization.
 
 ---
 
@@ -211,6 +234,65 @@ Expected behavior:
 - support `type=book|untriggered`
 - render heatmap bins in tabular output
 
+### `dpro-hl onchain prediction-positions <outcomeId>`
+Use for prediction-market holder positions for one outcome.
+
+Expected behavior:
+- require a positive `outcomeId`
+- support optional `order`, `address`, `page`, and `limit`
+- render holder rows with address, side, balance, value, uPnL, and ROE
+
+### `dpro-hl onchain prediction-orders-book`
+Use for prediction-market resting orders.
+
+Expected behavior:
+- accept either `--coin '#90'` or `--outcome-id <N> --side 0|1`
+- support paging via `page` / `limit`
+- render order rows with OID, side, size, price, and trigger price when present
+
+### `dpro-hl onchain prediction-orders-book-batch`
+Use for multiple prediction order books.
+
+Expected behavior:
+- accept either `--coins '#90,#91'` or `--outcome-ids 9,10 [--sides 0,1]`
+- cap resolved prediction coins at 30
+- render one summary row per resolved prediction coin
+
+### `dpro-hl onchain prediction-orders-untriggered`
+Use for prediction-market untriggered or conditional orders.
+
+Expected behavior:
+- use the same input model as `prediction-orders-book`
+- render trigger-related fields when available
+
+### `dpro-hl onchain prediction-orders-untriggered-batch`
+Use for multiple prediction untriggered order books.
+
+Expected behavior:
+- use the same input model as `prediction-orders-book-batch`
+- render one summary row per resolved prediction coin
+
+### `dpro-hl onchain tradfi-volume-top`
+Use for Hype TradFi assets ranked by 24h notional volume.
+
+Expected behavior:
+- support `period=24h` and `limit <= 50`
+- render asset, price, 24h change, volume, OI, and max leverage
+
+### `dpro-hl onchain tradfi-gainers-top`
+Use for Hype TradFi assets ranked by positive 24h change.
+
+Expected behavior:
+- support `period=24h` and `limit <= 50`
+- render the same row shape as `tradfi-volume-top`
+
+### `dpro-hl onchain tradfi-gainers-holder-pnl-top`
+Use for top PnL holders within top Hype TradFi gainers.
+
+Expected behavior:
+- support `period=24h`, `assetLimit <= 50`, and `holderLimit <= 50`
+- render asset, holder address, side, uPnL, ROE, and liquidation risk
+
 ### `dpro-hl onchain liqmap <coin>`
 Use for liquidation heatmap inspection.
 
@@ -258,6 +340,22 @@ Expected behavior:
 - support optional `startTime` and `endTime` passthrough
 - support paging via `page` / `limit`
 - render fill rows with time, side, size, price, and notional
+
+### `dpro-hl onchain hip3-smart-trader <coin>`
+Use for HIP-3 historical trader rankings for one asset.
+
+Expected behavior:
+- require exact coin and normalize namespaced HIP-3 coins
+- support `sort`, `order`, `address`, `page`, and `limit`
+- render trader address, PnL, PnL percent, buy/sell volume, portfolio value, trade count, and last trade time
+
+### `dpro-hl onchain hip4-smart-trader <tokenId>`
+Use for HIP-4 historical trader rankings for one token.
+
+Expected behavior:
+- require positive `tokenId`
+- support `sort`, `order`, `address`, `page`, and `limit`
+- render the same row shape as `hip3-smart-trader`
 
 ---
 
@@ -337,6 +435,33 @@ These are presentation targets, not strict upstream API schemas.
 | `period` | selected period |
 | `items` | item rows or grouped totals |
 
+### Prediction Positions / Orders
+| Field | Notes |
+|---|---|
+| `outcomeId` | prediction outcome id |
+| `side` | prediction side id `0|1` where applicable |
+| `coin` | prediction coin encoding such as `#90` where applicable |
+| `orders` | resting or untriggered prediction orders |
+| `holders` | holder position rows for an outcome |
+
+### TradFi Rankings
+| Field | Notes |
+|---|---|
+| `coin` | Hype TradFi coin, often namespaced |
+| `price` | current mark price |
+| `changePercent24h` | 24h percentage change |
+| `volume24hUsd` | 24h notional volume |
+| `topPnlHolders` | holder rows for holder-PnL rankings |
+
+### Smart Trader
+| Field | Notes |
+|---|---|
+| `userAddress` | trader address |
+| `pnl` | realized or total PnL field supplied by upstream |
+| `pnlPct` | PnL percentage |
+| `currentPortfolioValue` | current portfolio value when supplied |
+| `lastTradeAt` | latest trade timestamp |
+
 ---
 
 ## Failure Behavior
@@ -384,6 +509,17 @@ If the cause is unclear, consult `references/troubleshooting.md` and present:
  dpro-hl onchain orders-book BTC --page 1 --limit 20
  dpro-hl onchain orders-chart BTC --type book
  dpro-hl onchain trending --period 1h --market all
+
+# prediction markets
+ dpro-hl onchain prediction-positions 9 --limit 10
+ dpro-hl onchain prediction-orders-book --outcome-id 9 --side 0
+ dpro-hl onchain prediction-orders-book-batch --outcome-ids 9,10 --sides 0,1
+
+# Hype TradFi and smart trader
+ dpro-hl onchain tradfi-volume-top --limit 5
+ dpro-hl onchain tradfi-gainers-holder-pnl-top --asset-limit 5 --holder-limit 3
+ dpro-hl onchain hip3-smart-trader xyz:TSLA --sort pnlPct --limit 10
+ dpro-hl onchain hip4-smart-trader 123 --sort pnl --limit 10
 
 # liquidation map
  dpro-hl onchain liqmap xyz:TSLA --groupBy all

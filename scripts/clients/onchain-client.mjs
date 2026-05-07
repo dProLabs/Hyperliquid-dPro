@@ -32,11 +32,21 @@ const FALLBACK_ALLOWLIST = new Set([
   '/api/v1/hl/orders/book',
   '/api/v1/hl/orders/untriggered',
   '/api/v1/hl/orders/chart',
+  '/api/v1/hl/prediction/positions',
+  '/api/v1/hl/prediction/orders/book',
+  '/api/v1/hl/prediction/orders/book/batch',
+  '/api/v1/hl/prediction/orders/untriggered',
+  '/api/v1/hl/prediction/orders/untriggered/batch',
+  '/api/v1/hl/tradfi/volume-top',
+  '/api/v1/hl/tradfi/gainers-top',
+  '/api/v1/hl/tradfi/gainers-holder-pnl-top',
   '/api/v1/hl/liqmap',
   '/api/v1/hl/liqmap/timeline',
   '/api/v1/hl/perp/liquidation-map',
   '/api/v1/leaderboard',
   '/api/v1/hip3/fills',
+  '/api/v1/hip3/smart-trader',
+  '/api/v1/hip4/smart-trader',
 ]);
 
 let openapiCache = null;

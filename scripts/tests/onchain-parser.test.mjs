@@ -54,4 +54,34 @@ describe('onchain parser', () => {
     assert.equal(parsed.flags.page, '1');
     assert.equal(parsed.flags.limit, '20');
   });
+
+  it('parses prediction positions command', () => {
+    const parsed = parseInput('dpro-hl onchain prediction-positions 9 --limit 10');
+    assert.equal(parsed.domain, 'onchain');
+    assert.equal(parsed.action, 'prediction-positions');
+    assert.equal(parsed.target, '9');
+    assert.equal(parsed.flags.limit, '10');
+  });
+
+  it('parses prediction order book flags', () => {
+    const parsed = parseInput('dpro-hl onchain prediction-orders-book --outcome-id 9 --side 0');
+    assert.equal(parsed.domain, 'onchain');
+    assert.equal(parsed.action, 'prediction-orders-book');
+    assert.equal(parsed.flags['outcome-id'], '9');
+    assert.equal(parsed.flags.side, '0');
+  });
+
+  it('parses tradfi and smart trader commands', () => {
+    const tradfi = parseInput('dpro-hl onchain tradfi-gainers-holder-pnl-top --asset-limit 5 --holder-limit 3');
+    assert.equal(tradfi.action, 'tradfi-gainers-holder-pnl-top');
+    assert.equal(tradfi.flags['asset-limit'], '5');
+
+    const hip3 = parseInput('dpro-hl onchain hip3-smart-trader xyz:tsla --sort pnlPct --limit 10');
+    assert.equal(hip3.action, 'hip3-smart-trader');
+    assert.equal(hip3.target, 'XYZ:TSLA');
+
+    const hip4 = parseInput('dpro-hl onchain hip4-smart-trader 123 --sort pnl');
+    assert.equal(hip4.action, 'hip4-smart-trader');
+    assert.equal(hip4.target, '123');
+  });
 });

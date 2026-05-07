@@ -460,6 +460,33 @@ describe('parser', () => {
       assert.equal(r.flags.endTime, '2');
       assert.equal(r.flags.limit, '5');
     });
+
+    it('parses new prediction and tradfi onchain commands', () => {
+      const positions = parseInput('dpro-hl onchain prediction-positions 9 --limit 5');
+      assert.equal(positions.domain, 'onchain');
+      assert.equal(positions.action, 'prediction-positions');
+      assert.equal(positions.target, '9');
+
+      const batch = parseInput('dpro-hl onchain prediction-orders-untriggered-batch --outcome-ids 9,10 --sides 0,1');
+      assert.equal(batch.action, 'prediction-orders-untriggered-batch');
+      assert.equal(batch.flags['outcome-ids'], '9,10');
+
+      const tradfi = parseInput('dpro-hl onchain tradfi-volume-top --limit 5');
+      assert.equal(tradfi.action, 'tradfi-volume-top');
+      assert.equal(tradfi.flags.limit, '5');
+    });
+
+    it('parses smart trader onchain commands', () => {
+      const hip3 = parseInput('dpro-hl onchain hip3-smart-trader xyz:tsla --sort pnlPct --limit 10');
+      assert.equal(hip3.domain, 'onchain');
+      assert.equal(hip3.action, 'hip3-smart-trader');
+      assert.equal(hip3.target, 'XYZ:TSLA');
+
+      const hip4 = parseInput('dpro-hl onchain hip4-smart-trader 123 --sort pnl');
+      assert.equal(hip4.domain, 'onchain');
+      assert.equal(hip4.action, 'hip4-smart-trader');
+      assert.equal(hip4.target, '123');
+    });
   });
 
   describe('natural language', () => {

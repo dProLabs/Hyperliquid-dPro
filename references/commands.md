@@ -453,11 +453,27 @@ Check whether the selected user has already authorized the builder.
 ### `dpro-hl onchain orders-book <coin> [--page N] [--limit N]`
 ### `dpro-hl onchain orders-untriggered <coin> [--page N] [--limit N]`
 ### `dpro-hl onchain orders-chart <coin> [--type book|untriggered]`
+### `dpro-hl onchain prediction-positions <outcomeId> [--order asc|desc] [--address <wallet>] [--page N] [--limit N]`
+### `dpro-hl onchain prediction-orders-book [--coin <#N>|--outcome-id N --side 0|1] [--page N] [--limit N]`
+### `dpro-hl onchain prediction-orders-book-batch [--coins <#N,#N>|--outcome-ids N,N [--sides 0,1]] [--page N] [--limit N]`
+### `dpro-hl onchain prediction-orders-untriggered [--coin <#N>|--outcome-id N --side 0|1] [--page N] [--limit N]`
+### `dpro-hl onchain prediction-orders-untriggered-batch [--coins <#N,#N>|--outcome-ids N,N [--sides 0,1]] [--page N] [--limit N]`
+### `dpro-hl onchain tradfi-volume-top [--period 24h] [--limit N]`
+### `dpro-hl onchain tradfi-gainers-top [--period 24h] [--limit N]`
+### `dpro-hl onchain tradfi-gainers-holder-pnl-top [--period 24h] [--asset-limit N] [--holder-limit N]`
 ### `dpro-hl onchain liqmap <coin> [--groupBy all|smart|whale]`
 ### `dpro-hl onchain liquidation-map <coin> [--groupBy all|smart|whale]` (compat alias)
 ### `dpro-hl onchain liqmap-timeline <coin> --from <ISO> --to <ISO>`
 ### `dpro-hl onchain trending [--period 15m|1h|4h|24h] [--market all|spot|perp] [--page N] [--limit N]`
 ### `dpro-hl onchain leaderboard [--page N] [--limit N] [--sort field] [--order asc|desc]`
 ### `dpro-hl onchain hip3-fills <coin> [--startTime <ISO|ms>] [--endTime <ISO|ms>] [--page N] [--limit N]`
+### `dpro-hl onchain hip3-smart-trader <coin> [--sort pnlPct|pnl|totalBuy|totalSell|portfolioValue|lastTradeAt] [--order asc|desc] [--address <wallet>] [--page N] [--limit N]`
+### `dpro-hl onchain hip4-smart-trader <tokenId> [--sort pnlPct|pnl|totalBuy|totalSell|portfolioValue|lastTradeAt] [--order asc|desc] [--address <wallet>] [--page N] [--limit N]`
+
+**Notes:**
+- Prefer `--outcome-id` and `--side` for prediction orders because shell commands treat unquoted `#` as a comment.
+- Prediction batch commands support at most 30 resolved prediction coins.
+- TradFi ranking commands currently support only `--period 24h` and `--limit` up to 50.
+- Smart-trader commands support `--limit` up to 500.
 
 For endpoint mapping and response-shape details, see [`onchain.md`](onchain.md).

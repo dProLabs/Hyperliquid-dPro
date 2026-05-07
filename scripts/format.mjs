@@ -142,6 +142,100 @@ function normalizeOrdersPayload(payload) {
   };
 }
 
+function formatTime(value) {
+  if (value == null || value === '') return '—';
+  const numeric = Number(value);
+  const date = Number.isFinite(numeric) ? new Date(numeric) : new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+function fmtPctLiteral(value) {
+  if (value == null || value === '') return '—';
+  const raw = String(value);
+  if (raw.endsWith('%')) return raw;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return raw;
+  return `${fmtNum(n, 2)}%`;
+}
+
+function formatPredictionOrders(d, title) {
+  const normalized = normalizeOrdersPayload(d.payload);
+  const payload = unwrapOnchainPayload(d.payload) || {};
+  const subtitle = [
+    `Path: ${d.path}`,
+    `Coin: ${normalized.coin}`,
+    `Outcome: ${payload.outcomeId ?? d.query?.outcomeId ?? '—'}`,
+    `Side: ${payload.side ?? d.query?.side ?? '—'}`,
+    `Pagination: ${formatPagination(normalized.pagination)}`,
+  ].join('\n');
+  if (!normalized.orders.length) return `${title}\n${subtitle}\nNo orders.`;
+  const rows = normalized.orders.slice(0, 20).map((row) => ([
+    row.oid ?? '—',
+    row.side ?? '—',
+    fmtNum(row.size ?? row.sz ?? row.origSize, 4),
+    fmtPx(row.price ?? row.limitPx),
+    row.triggerPx ?? '—',
+  ]));
+  return `${title}\n${subtitle}\n\n`
+    + renderTable(['OID', 'Side', 'Size', 'Price', 'Trigger Px'], rows, [2, 3, 4]);
+}
+
+function formatPredictionOrdersBatch(d, title) {
+  const payload = unwrapOnchainPayload(d.payload) || {};
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  if (!items.length) return `${title}\nPath: ${d.path}\nNo items.`;
+  const rows = items.slice(0, 20).map((item) => [
+    item.coin || '—',
+    item.outcomeId ?? '—',
+    item.side ?? '—',
+    Array.isArray(item.orders) ? item.orders.length : 0,
+    formatPagination(item.pagination),
+  ]);
+  const summary = payload.summary
+    ? `Requested: ${payload.summary.requested ?? '—'}, Returned: ${payload.summary.returned ?? '—'}, Snapshot: ${payload.summary.snapshotHeight ?? '—'}`
+    : 'Summary: —';
+  return `${title}\nPath: ${d.path}\n${summary}\n\n`
+    + renderTable(['Coin', 'Outcome', 'Side', 'Orders', 'Pagination'], rows, [1, 2, 3]);
+}
+
+function formatTradfiTop(d, title) {
+  const payload = unwrapOnchainPayload(d.payload) || {};
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  if (!items.length) return `${title}\nPath: ${d.path}\nNo assets.`;
+  const rows = items.slice(0, 20).map((item) => [
+    item.coin || '—',
+    item.displayName || '—',
+    fmtPx(item.price),
+    fmtPctLiteral(item.changePercent24h),
+    fmtNum(item.volume24hUsd, 2),
+    fmtNum(item.openInterestUsd, 2),
+    item.maxLeverage ?? '—',
+  ]);
+  return `${title}\nPath: ${d.path}\nPeriod: ${payload.period || d.query?.period || '24h'}\n\n`
+    + renderTable(['Coin', 'Name', 'Price', '24h %', 'Volume', 'OI', 'MaxLev'], rows, [2, 3, 4, 5, 6]);
+}
+
+function formatSmartTrader(d, title, idLabel) {
+  const payload = unwrapOnchainPayload(d.payload) || {};
+  const items = Array.isArray(payload.items) ? payload.items : firstArray(payload);
+  const idValue = payload.coin || payload.tokenId || d.query?.coin || d.query?.tokenId || '—';
+  if (!items.length) return `${title}\nPath: ${d.path}\n${idLabel}: ${idValue}\nNo traders.`;
+  const rows = items.slice(0, 20).map((item, idx) => [
+    deriveRank(item, idx, d.query),
+    item.userAddress || item.address || '—',
+    fmtNum(item.pnl ?? item.realizedPnl, 2),
+    fmtPctLiteral(item.pnlPct),
+    fmtNum(item.totalBuyUsd ?? item.totalBuy, 2),
+    fmtNum(item.totalSellUsd ?? item.totalSell, 2),
+    fmtNum(item.currentPortfolioValue ?? item.portfolioValue, 2),
+    item.tradeCount ?? '—',
+    formatTime(item.lastTradeAt),
+  ]);
+  return `${title}\nPath: ${d.path}\n${idLabel}: ${idValue}\nMark: ${fmtPx(payload.markPx)}\nPagination: ${formatPagination(payload.pagination)}\n\n`
+    + renderTable(['Rank', 'User', 'PnL', 'PnL %', 'Buy', 'Sell', 'Portfolio', 'Trades', 'Last Trade'], rows, [0, 2, 3, 4, 5, 6, 7]);
+}
+
 function formatPagination(pagination) {
   if (!pagination || typeof pagination !== 'object') return '—';
   const page = pagination.page ?? '—';
@@ -724,6 +818,54 @@ const formatters = {
     return `Onchain orders chart\nPath: ${d.path}\nCoin: ${payload.coin || d.query?.coin || '—'}\nType: ${payload.type || d.query?.type || 'book'}\nRows: ${heatmap.length}\n\n`
       + renderTable(['Bin', 'Start', 'End', 'Order Value', 'Orders'], rows, [0, 1, 2, 3, 4]);
   },
+  'onchain-prediction-positions': (d) => {
+    const payload = unwrapOnchainPayload(d.payload) || {};
+    const rows = Array.isArray(payload.holders) ? payload.holders : firstArray(payload);
+    const title = `Onchain prediction positions\nPath: ${d.path}\nOutcome: ${payload.outcomeId ?? d.query?.outcomeId ?? '—'} ${payload.outcomeName || ''}`.trim();
+    if (!rows.length) return `${title}\nNo positions.`;
+    const tableRows = rows.slice(0, 20).map((row, idx) => [
+      deriveRank(row, idx, d.query),
+      row.address || row.user || '—',
+      row.sideName || row.side || row.tokenId || '—',
+      fmtNum(row.balance, 4),
+      fmtNum(row.value, 2),
+      fmtNum(row.uPnl, 2),
+      fmtPctLiteral(row.roe),
+    ]);
+    return `${title}\nPagination: ${formatPagination(payload.pagination)}\n\n`
+      + renderTable(['Rank', 'Address', 'Side', 'Balance', 'Value', 'uPnL', 'ROE'], tableRows, [0, 3, 4, 5, 6]);
+  },
+  'onchain-prediction-orders-book': (d) => formatPredictionOrders(d, 'Onchain prediction orders (book)'),
+  'onchain-prediction-orders-untriggered': (d) => formatPredictionOrders(d, 'Onchain prediction orders (untriggered)'),
+  'onchain-prediction-orders-book-batch': (d) => formatPredictionOrdersBatch(d, 'Onchain prediction orders (book batch)'),
+  'onchain-prediction-orders-untriggered-batch': (d) => formatPredictionOrdersBatch(d, 'Onchain prediction orders (untriggered batch)'),
+  'onchain-tradfi-volume-top': (d) => formatTradfiTop(d, 'Onchain TradFi volume top'),
+  'onchain-tradfi-gainers-top': (d) => formatTradfiTop(d, 'Onchain TradFi gainers top'),
+  'onchain-tradfi-gainers-holder-pnl-top': (d) => {
+    const payload = unwrapOnchainPayload(d.payload) || {};
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    if (!items.length) return `Onchain TradFi gainers holder PnL top\nPath: ${d.path}\nNo assets.`;
+    const rows = [];
+    for (const item of items.slice(0, 10)) {
+      const holders = Array.isArray(item.topPnlHolders) ? item.topPnlHolders : [];
+      if (!holders.length) {
+        rows.push([item.coin || '—', '—', '—', '—', '—', '—']);
+        continue;
+      }
+      for (const holder of holders.slice(0, 5)) {
+        rows.push([
+          item.coin || '—',
+          holder.address || '—',
+          holder.side || '—',
+          fmtNum(holder.uPnl, 2),
+          fmtPctLiteral(holder.roe),
+          holder.liquidationRisk || '—',
+        ]);
+      }
+    }
+    return `Onchain TradFi gainers holder PnL top\nPath: ${d.path}\nPeriod: ${payload.period || d.query?.period || '24h'}\n\n`
+      + renderTable(['Coin', 'Address', 'Side', 'uPnL', 'ROE', 'Liq Risk'], rows, [3, 4]);
+  },
   'onchain-liquidation-map': (d) => {
     const payload = unwrapOnchainPayload(d.payload) || {};
     const heatmap = Array.isArray(payload.heatmap) ? payload.heatmap : firstArray(payload);
@@ -811,6 +953,8 @@ const formatters = {
     return `Onchain HIP-3 fills\nPath: ${d.path}\nPagination: ${formatPagination(payload.pagination)}\n\n`
       + renderTable(['Time', 'Coin', 'Side', 'Size', 'Price', 'Notional'], rows, [3, 4, 5]);
   },
+  'onchain-hip3-smart-trader': (d) => formatSmartTrader(d, 'Onchain HIP-3 smart traders', 'Coin'),
+  'onchain-hip4-smart-trader': (d) => formatSmartTrader(d, 'Onchain HIP-4 smart traders', 'Token ID'),
 };
 
 // --- Main format function ---

@@ -290,4 +290,103 @@ describe('onchain format', () => {
     assert.ok(output.includes('123,456.78'));
     assert.ok(output.includes('Rows: 1'));
   });
+
+  it('formats prediction positions table', () => {
+    const output = formatResult({
+      ok: true,
+      type: 'onchain-prediction-positions',
+      data: {
+        path: '/api/v1/hl/prediction/positions',
+        query: { outcomeId: 9, page: 1, limit: 10 },
+        payload: {
+          market: 'prediction',
+          outcomeId: 9,
+          outcomeName: 'Will HYPE go up?',
+          holders: [
+            { address: '0xabc', sideName: 'Yes', balance: '10', value: '7.5', uPnl: '1.2', roe: '12.3' },
+          ],
+          pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    assert.ok(output.includes('Onchain prediction positions'));
+    assert.ok(output.includes('0xabc'));
+    assert.ok(output.includes('Yes'));
+  });
+
+  it('formats prediction order book and batch summaries', () => {
+    const single = formatResult({
+      ok: true,
+      type: 'onchain-prediction-orders-book',
+      data: {
+        path: '/api/v1/hl/prediction/orders/book',
+        payload: {
+          market: 'prediction',
+          coin: '#90',
+          outcomeId: 9,
+          side: 0,
+          orders: [{ oid: 1, side: 'B', size: '2', price: '0.5' }],
+          pagination: { page: 1, limit: 100, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    assert.ok(single.includes('Onchain prediction orders (book)'));
+    assert.ok(single.includes('#90'));
+
+    const batch = formatResult({
+      ok: true,
+      type: 'onchain-prediction-orders-untriggered-batch',
+      data: {
+        path: '/api/v1/hl/prediction/orders/untriggered/batch',
+        payload: {
+          market: 'prediction',
+          items: [{ coin: '#90', outcomeId: 9, side: 0, orders: [] }],
+          summary: { requested: 1, returned: 1, snapshotHeight: 123 },
+        },
+      },
+    });
+    assert.ok(batch.includes('untriggered batch'));
+    assert.ok(batch.includes('#90'));
+  });
+
+  it('formats tradfi ranking tables', () => {
+    const output = formatResult({
+      ok: true,
+      type: 'onchain-tradfi-volume-top',
+      data: {
+        path: '/api/v1/hl/tradfi/volume-top',
+        payload: {
+          period: '24h',
+          items: [
+            { coin: 'xyz:AMD', displayName: 'AMD', price: '100', changePercent24h: '5.5', volume24hUsd: '1000000', openInterestUsd: '250000', maxLeverage: 10 },
+          ],
+        },
+      },
+    });
+    assert.ok(output.includes('Onchain TradFi volume top'));
+    assert.ok(output.includes('xyz:AMD'));
+    assert.ok(output.includes('5.50%'));
+  });
+
+  it('formats smart trader tables', () => {
+    const output = formatResult({
+      ok: true,
+      type: 'onchain-hip3-smart-trader',
+      data: {
+        path: '/api/v1/hip3/smart-trader',
+        query: { coin: 'xyz:TSLA' },
+        payload: {
+          coin: 'xyz:TSLA',
+          markPx: '250',
+          items: [
+            { userAddress: '0xabc', pnl: '1200', pnlPct: '12.5', totalBuyUsd: '10000', totalSellUsd: '11200', currentPortfolioValue: '500', tradeCount: 4, lastTradeAt: 1710000000000 },
+          ],
+          pagination: { page: 1, limit: 50, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    assert.ok(output.includes('Onchain HIP-3 smart traders'));
+    assert.ok(output.includes('0xabc'));
+    assert.ok(output.includes('12.50%'));
+  });
 });

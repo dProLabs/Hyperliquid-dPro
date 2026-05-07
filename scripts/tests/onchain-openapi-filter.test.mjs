@@ -8,9 +8,14 @@ describe('onchain openapi filter', () => {
     assert.equal(allowlist.has('/api/v1/health'), true);
     assert.equal(allowlist.has('/api/v1/hl/prices/mids'), true);
     assert.equal(allowlist.has('/api/v1/hl/orders/book'), true);
+    assert.equal(allowlist.has('/api/v1/hl/prediction/positions'), true);
+    assert.equal(allowlist.has('/api/v1/hl/prediction/orders/book'), true);
+    assert.equal(allowlist.has('/api/v1/hl/tradfi/volume-top'), true);
     assert.equal(allowlist.has('/api/v1/hl/trending'), true);
     assert.equal(allowlist.has('/api/v1/leaderboard'), true);
     assert.equal(allowlist.has('/api/v1/hip3/fills'), true);
+    assert.equal(allowlist.has('/api/v1/hip3/smart-trader'), true);
+    assert.equal(allowlist.has('/api/v1/hip4/smart-trader'), true);
   });
 
   it('excludes blocked endpoints', async () => {

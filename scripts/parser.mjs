@@ -109,9 +109,19 @@ const ONCHAIN_ACTIONS = new Set([
   'orders-book',
   'orders-untriggered',
   'orders-chart',
+  'prediction-positions',
+  'prediction-orders-book',
+  'prediction-orders-book-batch',
+  'prediction-orders-untriggered',
+  'prediction-orders-untriggered-batch',
+  'tradfi-volume-top',
+  'tradfi-gainers-top',
+  'tradfi-gainers-holder-pnl-top',
   'trending',
   'leaderboard',
   'hip3-fills',
+  'hip3-smart-trader',
+  'hip4-smart-trader',
 ]);
 const ONCHAIN_COIN_ACTIONS = new Set([
   'spot-holders',
@@ -123,6 +133,7 @@ const ONCHAIN_COIN_ACTIONS = new Set([
   'orders-untriggered',
   'orders-chart',
   'hip3-fills',
+  'hip3-smart-trader',
 ]);
 const NEWS_ACTION_ALIASES = new Set(['list', 'ls']);
 const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;

@@ -186,6 +186,98 @@ describe('onchain commands', () => {
     assert.ok(capturedUrl.includes('limit=5'));
   });
 
+  it('builds prediction positions query correctly', async () => {
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return jsonResponse({ market: 'prediction', holders: [] });
+    };
+
+    const result = await onchain.predictionPositions({
+      target: '9',
+      flags: { order: 'asc', address: '0xabc', page: '2', limit: '10' },
+    }, {});
+
+    assert.equal(result.type, 'onchain-prediction-positions');
+    assert.match(capturedUrl, /^https:\/\/api\.d\.pro\/api\/v1\/hl\/prediction\/positions\?/);
+    assert.ok(capturedUrl.includes('outcomeId=9'));
+    assert.ok(capturedUrl.includes('order=asc'));
+    assert.ok(capturedUrl.includes('address=0xabc'));
+  });
+
+  it('builds prediction order book query from outcome and side', async () => {
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return jsonResponse({ market: 'prediction', orders: [] });
+    };
+
+    await onchain.predictionOrdersBook({
+      flags: { 'outcome-id': '9', side: '0', limit: '20' },
+    }, {});
+
+    assert.match(capturedUrl, /^https:\/\/api\.d\.pro\/api\/v1\/hl\/prediction\/orders\/book\?/);
+    assert.ok(capturedUrl.includes('outcomeId=9'));
+    assert.ok(capturedUrl.includes('side=0'));
+    assert.ok(capturedUrl.includes('limit=20'));
+  });
+
+  it('builds prediction batch query from outcome ids', async () => {
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return jsonResponse({ market: 'prediction', items: [] });
+    };
+
+    await onchain.predictionOrdersUntriggeredBatch({
+      flags: { 'outcome-ids': '9,10', sides: '0,1', page: '1' },
+    }, {});
+
+    assert.match(capturedUrl, /^https:\/\/api\.d\.pro\/api\/v1\/hl\/prediction\/orders\/untriggered\/batch\?/);
+    assert.ok(capturedUrl.includes('outcomeIds=9%2C10'));
+    assert.ok(capturedUrl.includes('sides=0%2C1'));
+  });
+
+  it('builds tradfi ranking queries correctly', async () => {
+    let capturedUrl = '';
+    globalThis.fetch = async (url) => {
+      capturedUrl = String(url);
+      return jsonResponse({ period: '24h', items: [] });
+    };
+
+    await onchain.tradfiGainersHolderPnlTop({
+      flags: { 'asset-limit': '5', 'holder-limit': '3', period: '24h' },
+    }, {});
+
+    assert.match(capturedUrl, /^https:\/\/api\.d\.pro\/api\/v1\/hl\/tradfi\/gainers-holder-pnl-top\?/);
+    assert.ok(capturedUrl.includes('period=24h'));
+    assert.ok(capturedUrl.includes('assetLimit=5'));
+    assert.ok(capturedUrl.includes('holderLimit=3'));
+  });
+
+  it('builds smart trader queries correctly', async () => {
+    const urls = [];
+    globalThis.fetch = async (url) => {
+      urls.push(String(url));
+      return jsonResponse({ items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } });
+    };
+
+    await onchain.hip3SmartTrader({
+      target: 'xyz:tsla',
+      flags: { sort: 'pnlPct', order: 'desc', limit: '10' },
+    }, {});
+    await onchain.hip4SmartTrader({
+      target: '123',
+      flags: { sort: 'pnl', order: 'asc', limit: '5' },
+    }, {});
+
+    assert.match(urls[0], /^https:\/\/api\.d\.pro\/api\/v1\/hip3\/smart-trader\?/);
+    assert.ok(urls[0].includes('coin=xyz%3ATSLA'));
+    assert.ok(urls[0].includes('sort=pnlPct'));
+    assert.match(urls[1], /^https:\/\/api\.d\.pro\/api\/v1\/hip4\/smart-trader\?/);
+    assert.ok(urls[1].includes('tokenId=123'));
+  });
+
   it('returns local deprecation notice for spot-meta', async () => {
     let called = false;
     globalThis.fetch = async () => {
