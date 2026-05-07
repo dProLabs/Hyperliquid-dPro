@@ -1,6 +1,7 @@
 // API endpoints
 export const MAINNET_URL = 'https://api.hyperliquid.xyz';
 export const TESTNET_URL = 'https://api.hyperliquid-testnet.xyz';
+export const NEWS_API_URL = 'https://assets-api.d.pro';
 
 // Builder code
 export const BUILDER_ADDRESS = '0xf36534b07ea0cbbe52194374e7387956fb97ad53';
@@ -45,6 +46,7 @@ export const DEFAULT_BOOK_LEVELS = 10;
 export const DEFAULT_CANDLE_COUNT = 20;
 export const DEFAULT_FILL_LIMIT = 20;
 export const DEFAULT_MOVERS_TOP = 10;
+export const DEFAULT_NEWS_LIMIT = 10;
 export const DEFAULT_SLIPPAGE_PCT = 0.5; // 0.5%
 export const DEFAULT_AUTO_UPGRADE_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 

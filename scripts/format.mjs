@@ -150,6 +150,79 @@ function formatPagination(pagination) {
   return `page=${page}, limit=${limit}, total=${total}`;
 }
 
+function fmtDateTime(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toISOString().slice(0, 16).replace('T', ' ');
+}
+
+function compactText(value, max = 120) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '—';
+  if (text.length <= max) return text;
+  return `${text.slice(0, Math.max(0, max - 3))}...`;
+}
+
+function compactBlock(value, max = 900) {
+  const text = String(value || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[ \t\f\v]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  if (!text) return '—';
+  if (text.length <= max) return text;
+  return `${text.slice(0, Math.max(0, max - 3))}...`;
+}
+
+function newsAssetSymbols(assets) {
+  if (!Array.isArray(assets) || !assets.length) return '—';
+  return compactText(assets.map(a => a?.symbol || a?.name).filter(Boolean).join(', '), 32);
+}
+
+function newsDirection(row) {
+  const display = row?.directionDisplay;
+  if (display?.direction) return display.direction;
+  const analysisDirection = row?.analysis?.direction;
+  return analysisDirection ? String(analysisDirection).toLowerCase() : '—';
+}
+
+function newsDirectionDetail(row) {
+  const display = row?.directionDisplay;
+  if (display?.direction) {
+    const affected = display.affectedAssets ? ` (${compactText(display.affectedAssets, 80)})` : '';
+    return `${display.direction}${affected}`;
+  }
+  if (row?.analysis?.direction) return row.analysis.direction;
+  return '—';
+}
+
+function normalizeNewsListPayload(payload) {
+  const unwrapped = unwrapOnchainPayload(payload);
+  if (Array.isArray(unwrapped)) {
+    return { items: unwrapped, total: unwrapped.length, page: null, limit: null };
+  }
+  if (!unwrapped || typeof unwrapped !== 'object') {
+    return { items: [], total: 0, page: null, limit: null };
+  }
+  return {
+    items: Array.isArray(unwrapped.items) ? unwrapped.items : firstArray(unwrapped),
+    total: unwrapped.total,
+    page: unwrapped.page,
+    limit: unwrapped.limit,
+  };
+}
+
+function formatNewsFilters(query = {}) {
+  const filters = [];
+  if (query.assetSymbol) filters.push(`asset=${query.assetSymbol}`);
+  if (query.assetId) filters.push(`assetId=${query.assetId}`);
+  if (query.type) filters.push(`type=${query.type}`);
+  if (query.category) filters.push(`category=${query.category}`);
+  if (query.locale) filters.push(`locale=${query.locale}`);
+  return filters.length ? `Filters: ${filters.join(', ')}` : 'Filters: all';
+}
+
 // --- Result formatters by type ---
 
 const formatters = {
@@ -220,6 +293,68 @@ const formatters = {
     const headers = ['Coin', 'Type', 'Asset ID', 'Max Leverage'];
     const rows = d.markets.map(m => [m.coin, m.type, m.assetId, m.maxLeverage || '—']);
     return `Markets (${d.markets.length})\n\n` + renderTable(headers, rows, [2, 3]);
+  },
+
+  'news-list': (d) => {
+    const payload = normalizeNewsListPayload(d.payload);
+    const totalText = payload.total != null ? ` of ${payload.total}` : '';
+    const lines = [
+      `News (${payload.items.length}${totalText})`,
+      formatNewsFilters(d.query),
+      `Page: ${payload.page ?? d.query?.page ?? '—'}  Limit: ${payload.limit ?? d.query?.limit ?? '—'}`,
+    ];
+    if (d.meta?.cache) lines.push(`Cache: ${d.meta.cache}`);
+    if (!payload.items.length) return `${lines.join('\n')}\n\nNo news found.`;
+
+    const rows = payload.items.slice(0, 20).map((item) => [
+      item.id ?? '—',
+      fmtDateTime(item.publishedAt),
+      newsAssetSymbols(item.assets),
+      newsDirection(item),
+      compactText(item.title || item.summary, 88),
+    ]);
+    return `${lines.join('\n')}\n\n` + renderTable(['ID', 'Published', 'Assets', 'Dir', 'Title'], rows, [0]);
+  },
+
+  'news-detail': (d) => {
+    const item = unwrapOnchainPayload(d.payload) || {};
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      return `News detail\nPath: ${d.path}\n` + JSON.stringify(item, null, 2);
+    }
+
+    const lines = [`News #${item.id ?? '—'}`];
+    lines.push(compactBlock(item.title || '(untitled)', 300));
+    lines.push('');
+    lines.push(`Published: ${fmtDateTime(item.publishedAt)}`);
+    lines.push(`Source: ${item.source || '—'}${item.publisher ? ` / ${item.publisher}` : ''}`);
+    lines.push(`Assets: ${newsAssetSymbols(item.assets)}`);
+    lines.push(`Direction: ${newsDirectionDetail(item)}`);
+    if (item.sentiment != null) lines.push(`Sentiment: ${item.sentiment}`);
+    if (item.contentClass) lines.push(`Content class: ${item.contentClass}`);
+    if (d.meta?.cache) lines.push(`Cache: ${d.meta.cache}`);
+
+    if (item.summary) {
+      lines.push('');
+      lines.push('Summary:');
+      lines.push(compactBlock(item.summary, 900));
+    }
+
+    const analysis = item.analysis;
+    if (analysis && typeof analysis === 'object') {
+      lines.push('');
+      lines.push(`Analysis (${analysis.locale || 'en'}):`);
+      if (analysis.coreSummary) lines.push(`Core summary: ${compactBlock(analysis.coreSummary, 900)}`);
+      if (analysis.impactLogic) lines.push(`Impact logic: ${compactBlock(analysis.impactLogic, 900)}`);
+      if (analysis.timeHorizon) lines.push(`Time horizon: ${compactBlock(analysis.timeHorizon, 300)}`);
+      if (analysis.risksAndWatchlist) lines.push(`Risks/watchlist: ${compactBlock(analysis.risksAndWatchlist, 900)}`);
+    }
+
+    if (item.url) {
+      lines.push('');
+      lines.push(`URL: ${item.url}`);
+    }
+
+    return lines.join('\n');
   },
 
   'account-ls': (d) => {

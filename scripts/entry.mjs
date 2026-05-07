@@ -52,12 +52,13 @@ export function __shouldClearPasswordCacheForTest(err) {
 
 async function ensureHandlers() {
   if (initialized) return;
-  const [market, account, trade, transfer, onchain] = await Promise.all([
+  const [market, account, trade, transfer, onchain, news] = await Promise.all([
     import('./commands/market.mjs'),
     import('./commands/account.mjs'),
     import('./commands/trade.mjs'),
     import('./commands/transfer.mjs'),
     import('./commands/onchain.mjs'),
+    import('./commands/news.mjs'),
   ]);
   registerHandlers({
     market: market.default || market,
@@ -65,6 +66,7 @@ async function ensureHandlers() {
     trade: trade.default || trade,
     transfer: transfer.default || transfer,
     onchain: onchain.default || onchain,
+    news: news.default || news,
   });
   initialized = true;
 }

@@ -21,13 +21,19 @@ These flags can be used across commands when applicable.
 | `DPRO_HL_PASSWORD_CACHE_TTL_SEC` | Cache TTL in seconds | `21600` |
 | `DPRO_HL_PASSWORD_CACHE_FILE` | Override cache file path | `${HOME}/.config/dpro-hl/password-session.json` |
 
+### Read-only API Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `DPRO_HL_NEWS_BASE_URL` | Override dPro assets news API base URL | `https://assets-api.d.pro` |
+
 ## Input Modes
 
 | Mode | Example |
 |---|---|
 | Command | `dpro-hl quote BTC` |
 | Slash | `/dpro-hl quote BTC` |
-| Natural language | `BTC price`, `show my positions`, `buy 0.1 BTC perp` |
+| Natural language | `BTC price`, `BTC news`, `show my positions`, `buy 0.1 BTC perp` |
 
 ---
 
@@ -90,6 +96,46 @@ Get combined market overview sections.
 ### `dpro-hl markets ls`
 
 List markets and symbols. Use this output as symbol source of truth.
+
+---
+
+## News Commands
+
+News commands are read-only and do not require Hyperliquid account credentials.
+
+### `dpro-hl news [asset] [--asset <symbol>] [--asset-id <id>] [--type <type>] [--category all|hot-24h|hot-7d] [--locale <locale>] [--page N] [--limit N]`
+
+Get latest dPro asset news. Positional `[asset]` is passed as `assetSymbol` and supports Hyperliquid-aware symbols such as `BTC`, `xyz:AAPL`, `PEPE/USDC`, and `@12`.
+
+**Options:**
+| Option | Description |
+|---|---|
+| `--asset <symbol>` | Asset symbol filter; overrides positional asset |
+| `--asset-id <id>` | Asset ID filter |
+| `--type <type>` | `CRYPTO`, `STOCK`, `ETF`, `FOREX`, `COMMODITY`, or `ALL` |
+| `--category all\|hot-24h\|hot-7d` | News window/category |
+| `--locale <locale>` | Preferred locale, for example `en` or `zh-CN` |
+| `--page N` | Page number, default `1` |
+| `--limit N` | Rows to request, default `10`, max `100` |
+
+**Examples:**
+```bash
+dpro-hl news BTC --limit 5
+dpro-hl news --asset xyz:AAPL --category hot-24h --locale en
+dpro-hl news list PEPE/USDC --category hot-7d
+```
+
+### `dpro-hl news detail <id> [--asset <symbol>] [--asset-id <id>] [--locale <locale>]`
+
+Get one news item with full analysis when available.
+
+**Examples:**
+```bash
+dpro-hl news detail 12345
+dpro-hl news detail 12345 --asset BTC --locale zh-CN
+```
+
+See `references/news.md` for the upstream API response shape and symbol-resolution behavior.
 
 ---
 

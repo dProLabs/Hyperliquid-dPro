@@ -124,6 +124,7 @@ const ONCHAIN_COIN_ACTIONS = new Set([
   'orders-chart',
   'hip3-fills',
 ]);
+const NEWS_ACTION_ALIASES = new Set(['list', 'ls']);
 const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
 // --- Structured command parsing ---
@@ -165,6 +166,42 @@ function parseStructured(tokens, flags, raw) {
       domain: 'market',
       action: first,
       target: tokens[1]?.toUpperCase() || null,
+      args: { rest: tokens.slice(2) },
+      flags,
+      raw,
+    };
+  }
+
+  // News reads: "news [asset]", "news detail <id>".
+  if (first === 'news') {
+    const actionOrTarget = tokens[1]?.toLowerCase();
+    if (actionOrTarget === 'detail') {
+      if (!tokens[2]) throw inputError('Usage: dpro-hl news detail <id> [--asset <symbol>] [--locale <locale>]');
+      return {
+        domain: 'news',
+        action: 'detail',
+        target: tokens[2],
+        args: { rest: tokens.slice(3) },
+        flags,
+        raw,
+      };
+    }
+
+    if (NEWS_ACTION_ALIASES.has(actionOrTarget)) {
+      return {
+        domain: 'news',
+        action: 'list',
+        target: tokens[2] || null,
+        args: { rest: tokens.slice(3) },
+        flags,
+        raw,
+      };
+    }
+
+    return {
+      domain: 'news',
+      action: 'list',
+      target: tokens[1] || null,
       args: { rest: tokens.slice(2) },
       flags,
       raw,
@@ -243,7 +280,7 @@ function parseStructured(tokens, flags, raw) {
     };
   }
 
-  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, transfer, onchain, account, spot order, perp order, hip3 order, approve-builder, builder-approval, positions, balances, orders, fills, order-history, funding-history, twap-history, twap-fill-history`);
+  throw unknownCommand(`Unknown command: ${first}. Try: quote, book, candles, movers, markets ls, news, transfer, onchain, account, spot order, perp order, hip3 order, approve-builder, builder-approval, positions, balances, orders, fills, order-history, funding-history, twap-history, twap-fill-history`);
 }
 
 function parseTradeAction(marketType, tokens, flags, raw) {
@@ -536,6 +573,8 @@ function parseOrderCommand(marketType, action, tokens, flags, raw) {
 // --- Natural language fallback ---
 
 const NL_PATTERNS = [
+  { pattern: /(?:news|\u65b0\u95fb)(?:\s+(?:for|about))?\s+([A-Za-z0-9:@/.-]+)/i, domain: 'news', action: 'list', targetGroup: 1 },
+  { pattern: /([A-Za-z0-9:@/.-]+)\s*(?:news|\u65b0\u95fb)/i, domain: 'news', action: 'list', targetGroup: 1 },
   { pattern: /(?:\u62a5\u4ef7|\u4ef7\u683c|price|quote)\s*([A-Za-z0-9:]+)/i, domain: 'market', action: 'quote', targetGroup: 1 },
   { pattern: /([A-Za-z0-9:]+)\s*(?:\u62a5\u4ef7|\u4ef7\u683c|price|quote)/i, domain: 'market', action: 'quote', targetGroup: 1 },
   { pattern: /(?:\u76d8\u53e3|book|\u6df1\u5ea6|depth)\s*([A-Za-z0-9:]+)/i, domain: 'market', action: 'book', targetGroup: 1 },
@@ -571,7 +610,10 @@ function parseNaturalLanguage(raw) {
       if (domain === 'trade') {
         throw inputError('Trading commands must specify a market namespace. Use "dpro-hl spot|perp|hip3 order ...".');
       }
-      const target = targetGroup !== null ? m[targetGroup]?.toUpperCase() : null;
+      const matchedTarget = targetGroup !== null ? m[targetGroup] : null;
+      const target = targetGroup !== null
+        ? (domain === 'news' ? matchedTarget : matchedTarget?.toUpperCase())
+        : null;
       const args = extractArgs ? extractArgs(m) : {};
       const flags = action === 'candles' ? extractCandleParams(raw) : {};
       return { domain, action, target, args, flags, raw };

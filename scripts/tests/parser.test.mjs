@@ -69,6 +69,43 @@ describe('parser', () => {
     });
   });
 
+  describe('news commands', () => {
+    it('parses news with positional asset', () => {
+      const r = parseInput('dpro-hl news BTC --category hot-24h --limit 5');
+      assert.equal(r.domain, 'news');
+      assert.equal(r.action, 'list');
+      assert.equal(r.target, 'BTC');
+      assert.equal(r.flags.category, 'hot-24h');
+      assert.equal(r.flags.limit, '5');
+    });
+
+    it('parses news with asset flag', () => {
+      const r = parseInput('dpro-hl news --asset xyz:AAPL --locale en');
+      assert.equal(r.domain, 'news');
+      assert.equal(r.action, 'list');
+      assert.equal(r.target, null);
+      assert.equal(r.flags.asset, 'xyz:AAPL');
+      assert.equal(r.flags.locale, 'en');
+    });
+
+    it('parses news list alias', () => {
+      const r = parseInput('dpro-hl news list PEPE/USDC --category hot-7d');
+      assert.equal(r.domain, 'news');
+      assert.equal(r.action, 'list');
+      assert.equal(r.target, 'PEPE/USDC');
+      assert.equal(r.flags.category, 'hot-7d');
+    });
+
+    it('parses news detail', () => {
+      const r = parseInput('dpro-hl news detail 12345 --asset BTC --locale zh-CN');
+      assert.equal(r.domain, 'news');
+      assert.equal(r.action, 'detail');
+      assert.equal(r.target, '12345');
+      assert.equal(r.flags.asset, 'BTC');
+      assert.equal(r.flags.locale, 'zh-CN');
+    });
+  });
+
   describe('account commands', () => {
     it('rejects deprecated --password flag', () => {
       assert.throws(
@@ -453,6 +490,20 @@ describe('parser', () => {
       const r = parseInput('\u770b\u6301\u4ed3');
       assert.equal(r.domain, 'account');
       assert.equal(r.action, 'positions');
+    });
+
+    it('parses natural language news', () => {
+      const r = parseInput('show me BTC news');
+      assert.equal(r.domain, 'news');
+      assert.equal(r.action, 'list');
+      assert.equal(r.target, 'BTC');
+    });
+
+    it('parses Chinese natural language news', () => {
+      const r = parseInput('BTC \u65b0\u95fb');
+      assert.equal(r.domain, 'news');
+      assert.equal(r.action, 'list');
+      assert.equal(r.target, 'BTC');
     });
 
     it('rejects buy NL without namespace', () => {
